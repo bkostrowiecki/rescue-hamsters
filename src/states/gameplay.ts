@@ -59,6 +59,9 @@ export class Gameplay extends Phaser.State {
         background.anchor.set(0.5);
         background.scale.set(1.2);
 
+        const frame = this.game.add.image(this.game.world.width, 0, 'frame');
+        frame.anchor.set(1, 0);
+
         this.map = this.game.add.tilemap('dynamicMap', this.TILE_SIZE, this.TILE_SIZE);
         this.map.addTilesetImage('tiles', 'tiles', this.TILE_SIZE, this.TILE_SIZE);
 

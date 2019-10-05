@@ -14,6 +14,7 @@ export class Preloader extends Phaser.State {
         this.game.load.spritesheet('hamster-bumpster', 'bin/assets/hamster_bumpster.png', 47, 34, 12);
 
         this.game.load.image('background', 'bin/assets/background.png');
+        this.game.load.image('frame', 'bin/assets/frame.png');
     }
 
     create() {

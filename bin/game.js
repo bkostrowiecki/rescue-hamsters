@@ -55,6 +55,7 @@ define("states/preloader", ["require", "exports"], function (require, exports) {
             this.game.load.image('cursor', 'bin/assets/cursor.png');
             this.game.load.spritesheet('hamster-bumpster', 'bin/assets/hamster_bumpster.png', 47, 34, 12);
             this.game.load.image('background', 'bin/assets/background.png');
+            this.game.load.image('frame', 'bin/assets/frame.png');
         };
         Preloader.prototype.create = function () {
             var tween = this.add.tween(this.preloaderBar).to({
@@ -211,6 +212,8 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             var background = this.game.add.image(this.game.world.centerX, this.game.world.centerY, 'background');
             background.anchor.set(0.5);
             background.scale.set(1.2);
+            var frame = this.game.add.image(this.game.world.width, 0, 'frame');
+            frame.anchor.set(1, 0);
             this.map = this.game.add.tilemap('dynamicMap', this.TILE_SIZE, this.TILE_SIZE);
             this.map.addTilesetImage('tiles', 'tiles', this.TILE_SIZE, this.TILE_SIZE);
             this.layer = this.map.createLayer(0);
