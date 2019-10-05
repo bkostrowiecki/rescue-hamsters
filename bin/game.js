@@ -108,7 +108,7 @@ define("entities/hamster", ["require", "exports"], function (require, exports) {
     var HamsterEntity = /** @class */ (function (_super) {
         __extends(HamsterEntity, _super);
         function HamsterEntity(game) {
-            var _this = _super.call(this, game, game.world.centerX, game.world.centerY, 'hamster', 0) || this;
+            var _this = _super.call(this, game, game.world.centerX, 32, 'hamster', 0) || this;
             _this.game.add.existing(_this);
             _this.game.physics.enable(_this, Phaser.Physics.ARCADE);
             var body = _this.body;
@@ -116,11 +116,19 @@ define("entities/hamster", ["require", "exports"], function (require, exports) {
             body.maxVelocity.y = 10000;
             body.setSize(48, 48, 0, 0);
             body.velocity.x = 100;
+            body.bounce.x = 1;
+            _this.restartButton = _this.game.input.keyboard.addKey(Phaser.Keyboard.R);
+            _this.restartButton.onDown.add(function () {
+                _this.position.set(_this.game.world.centerX, 32);
+            }, _this);
             return _this;
         }
         HamsterEntity.prototype.render = function () {
-            this.game.debug.bodyInfo(this, 32, 32);
-            this.game.debug.body(this);
+            this.game.debug.bodyInfo(this.body, 32, 32);
+            this.game.debug.body(this.body);
+        };
+        HamsterEntity.prototype.turnAround = function () {
+            this.body.velocity.x = -this.body.velocity.x;
         };
         return HamsterEntity;
     }(Phaser.Sprite));
@@ -163,7 +171,12 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             var data = '';
             for (var iy = 0; iy < this.MAP_WIDTH; iy++) {
                 for (var jx = 0; jx < this.MAP_HEIGHT; jx++) {
-                    data += tiles_1.Tiles.NONE;
+                    if (iy > 15) {
+                        data += tiles_1.Tiles.MIDDLE_GROUND;
+                    }
+                    else {
+                        data += tiles_1.Tiles.NONE;
+                    }
                     if (jx < this.MAP_WIDTH) {
                         data += ',';
                     }
@@ -179,14 +192,18 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             this.map = this.game.add.tilemap('dynamicMap', this.TILE_SIZE, this.TILE_SIZE);
             this.map.addTilesetImage('tiles', 'tiles', this.TILE_SIZE, this.TILE_SIZE);
             this.layer = this.map.createLayer(0);
-            this.layer.resizeWorld();
             this.game.physics.startSystem(Phaser.Physics.ARCADE);
             this.game.physics.arcade.gravity.y = 1000;
             this.game.world.setBounds(0, 0, this.TILE_SIZE * 30, this.TILE_SIZE * 20);
             this.hamster = new hamster_1.HamsterEntity(this.game);
             this.cursor = new cursor_1.CursorEntity(this.game);
+            this.map.setCollisionBetween(0, 1);
         };
         Gameplay.prototype.update = function () {
+            var _this = this;
+            this.game.physics.arcade.collide(this.hamster, this.layer, function () {
+                var hamsterBody = _this.hamster.body;
+            });
             if (this.game.input.mousePointer.isDown) {
                 if (this.game.input.mousePointer.x > this.TILE_SIZE * 30) {
                     return;
@@ -209,9 +226,11 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                     }
                 }
                 this.map.putTileWorldXY(tileTypeToPlace, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.layer);
+                this.map.setCollision(0);
             }
         };
         Gameplay.prototype.render = function () {
+            this.game.debug.bodyInfo(this.hamster, 0, 0);
         };
         return Gameplay;
     }(Phaser.State));
