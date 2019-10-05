@@ -1,6 +1,7 @@
 export class HamsterEntity extends Phaser.Sprite {
     private restartButton;
     private isFlipped;
+    private isSpringJumping;
     private walk;
 
     constructor(game: Phaser.Game) {
@@ -38,5 +39,11 @@ export class HamsterEntity extends Phaser.Sprite {
             this.scale.x *= -1;
             this.isFlipped = false;
         }
+    }
+
+    jumpOnSpring() {
+        this.body.velocity.y = -666;
+
+        this.isSpringJumping = true;
     }
 }

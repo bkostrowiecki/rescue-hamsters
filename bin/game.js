@@ -54,6 +54,7 @@ define("states/preloader", ["require", "exports"], function (require, exports) {
             this.game.load.image('hamster', 'bin/assets/hamster.png');
             this.game.load.image('cursor', 'bin/assets/cursor.png');
             this.game.load.spritesheet('hamster-bumpster', 'bin/assets/hamster_bumpster.png', 47, 34, 12);
+            this.game.load.image('background', 'bin/assets/background.png');
         };
         Preloader.prototype.create = function () {
             var tween = this.add.tween(this.preloaderBar).to({
@@ -101,6 +102,7 @@ define("helpers/tiles", ["require", "exports"], function (require, exports) {
         Tiles[Tiles["NONE"] = -1] = "NONE";
         Tiles[Tiles["TOP_GROUND"] = 0] = "TOP_GROUND";
         Tiles[Tiles["MIDDLE_GROUND"] = 1] = "MIDDLE_GROUND";
+        Tiles[Tiles["SPRING"] = 2] = "SPRING";
     })(Tiles = exports.Tiles || (exports.Tiles = {}));
 });
 define("entities/hamster", ["require", "exports"], function (require, exports) {
@@ -137,6 +139,10 @@ define("entities/hamster", ["require", "exports"], function (require, exports) {
                 this.isFlipped = false;
             }
         };
+        HamsterEntity.prototype.jumpOnSpring = function () {
+            this.body.velocity.y = -666;
+            this.isSpringJumping = true;
+        };
         return HamsterEntity;
     }(Phaser.Sprite));
     exports.HamsterEntity = HamsterEntity;
@@ -163,6 +169,11 @@ define("entities/cursor", ["require", "exports"], function (require, exports) {
 define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hamster", "entities/cursor"], function (require, exports, tiles_1, hamster_1, cursor_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
+    var PlayerTileType;
+    (function (PlayerTileType) {
+        PlayerTileType[PlayerTileType["GROUND"] = 0] = "GROUND";
+        PlayerTileType[PlayerTileType["SPRING"] = 1] = "SPRING";
+    })(PlayerTileType = exports.PlayerTileType || (exports.PlayerTileType = {}));
     var Gameplay = /** @class */ (function (_super) {
         __extends(Gameplay, _super);
         function Gameplay() {
@@ -179,7 +190,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             for (var iy = 0; iy < this.MAP_WIDTH; iy++) {
                 for (var jx = 0; jx < this.MAP_HEIGHT; jx++) {
                     if (iy > 15) {
-                        data += tiles_1.Tiles.MIDDLE_GROUND;
+                        data += tiles_1.Tiles.NONE;
                     }
                     else {
                         data += tiles_1.Tiles.NONE;
@@ -195,7 +206,11 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             return data;
         };
         Gameplay.prototype.create = function () {
+            var _this = this;
             this.game.cache.addTilemap('dynamicMap', null, this.generateCsvMapFromArray(), Phaser.Tilemap.CSV);
+            var background = this.game.add.image(this.game.world.centerX, this.game.world.centerY, 'background');
+            background.anchor.set(0.5);
+            background.scale.set(1.2);
             this.map = this.game.add.tilemap('dynamicMap', this.TILE_SIZE, this.TILE_SIZE);
             this.map.addTilesetImage('tiles', 'tiles', this.TILE_SIZE, this.TILE_SIZE);
             this.layer = this.map.createLayer(0);
@@ -204,7 +219,22 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             this.game.world.setBounds(0, 0, this.TILE_SIZE * 30, this.TILE_SIZE * 20);
             this.hamster = new hamster_1.HamsterEntity(this.game);
             this.cursor = new cursor_1.CursorEntity(this.game);
-            this.map.setCollisionBetween(0, 1);
+            this.map.setCollisionBetween(0, 3);
+            this.currentTile = PlayerTileType.GROUND;
+            this.groundButton = this.game.input.keyboard.addKey(Phaser.Keyboard.NUMPAD_1);
+            this.groundButton.onDown.add(function () {
+                _this.currentTile = PlayerTileType.GROUND;
+            }, this);
+            this.springButton = this.game.input.keyboard.addKey(Phaser.Keyboard.NUMPAD_2);
+            this.springButton.onDown.add(function () {
+                _this.currentTile = PlayerTileType.SPRING;
+            }, this);
+            this.map.setTileIndexCallback(2, function (sprite, tile) {
+                if (sprite instanceof hamster_1.HamsterEntity) {
+                    var hammsterBody = sprite.body;
+                    hammsterBody.velocity.y = -666;
+                }
+            }, this);
         };
         Gameplay.prototype.update = function () {
             var _this = this;
@@ -215,29 +245,40 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                 if (this.game.input.mousePointer.x > this.TILE_SIZE * 30) {
                     return;
                 }
-                var tileTypeToPlace = tiles_1.Tiles.NONE;
                 if (this.game.input.keyboard.isDown(Phaser.Keyboard.SHIFT)) {
-                    tileTypeToPlace = tiles_1.Tiles.NONE;
+                    this.map.putTileWorldXY(tiles_1.Tiles.NONE, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.layer);
+                    return;
                 }
-                else {
-                    var tileAbove = this.map.getTileWorldXY(this.game.input.mousePointer.x, this.game.input.mousePointer.y - this.TILE_SIZE, this.TILE_SIZE, this.TILE_SIZE);
-                    if (!!tileAbove && (tileAbove.index === tiles_1.Tiles.TOP_GROUND || tileAbove.index === tiles_1.Tiles.MIDDLE_GROUND)) {
-                        tileTypeToPlace = tiles_1.Tiles.MIDDLE_GROUND;
-                    }
-                    else {
-                        tileTypeToPlace = tiles_1.Tiles.TOP_GROUND;
-                    }
-                    var tileBelow = this.map.getTileWorldXY(this.game.input.mousePointer.x, this.game.input.mousePointer.y + this.TILE_SIZE);
-                    if (!!tileBelow && (tileBelow.index === tiles_1.Tiles.TOP_GROUND)) {
-                        this.map.putTileWorldXY(tiles_1.Tiles.MIDDLE_GROUND, tileBelow.worldX, tileBelow.worldY, this.TILE_SIZE, this.TILE_SIZE);
-                    }
+                if (this.currentTile === PlayerTileType.GROUND) {
+                    this.updatePlayerTileGround();
                 }
-                this.map.putTileWorldXY(tileTypeToPlace, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.layer);
-                this.map.setCollision(0);
+                if (this.currentTile === PlayerTileType.SPRING) {
+                    this.updatePlayerTileSpring();
+                }
             }
+        };
+        Gameplay.prototype.updatePlayerTileGround = function () {
+            var tileTypeToPlace = tiles_1.Tiles.NONE;
+            var tileAbove = this.map.getTileWorldXY(this.game.input.mousePointer.x, this.game.input.mousePointer.y - this.TILE_SIZE, this.TILE_SIZE, this.TILE_SIZE);
+            if (!!tileAbove && (tileAbove.index === tiles_1.Tiles.TOP_GROUND || tileAbove.index === tiles_1.Tiles.MIDDLE_GROUND)) {
+                tileTypeToPlace = tiles_1.Tiles.MIDDLE_GROUND;
+            }
+            else {
+                tileTypeToPlace = tiles_1.Tiles.TOP_GROUND;
+            }
+            var tileBelow = this.map.getTileWorldXY(this.game.input.mousePointer.x, this.game.input.mousePointer.y + this.TILE_SIZE);
+            if (!!tileBelow && (tileBelow.index === tiles_1.Tiles.TOP_GROUND)) {
+                this.map.putTileWorldXY(tiles_1.Tiles.MIDDLE_GROUND, tileBelow.worldX, tileBelow.worldY, this.TILE_SIZE, this.TILE_SIZE);
+            }
+            this.map.putTileWorldXY(tileTypeToPlace, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.layer);
+        };
+        Gameplay.prototype.updatePlayerTileSpring = function () {
+            var tileTypeToPlace = tiles_1.Tiles.SPRING;
+            this.map.putTileWorldXY(tileTypeToPlace, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.layer);
         };
         Gameplay.prototype.render = function () {
             this.game.debug.bodyInfo(this.hamster, 0, 0);
+            this.game.debug.body(this.hamster);
         };
         return Gameplay;
     }(Phaser.State));
