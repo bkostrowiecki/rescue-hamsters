@@ -1,8 +1,10 @@
 export class HamsterEntity extends Phaser.Sprite {
     private restartButton;
+    private isFlipped;
+    private walk;
 
     constructor(game: Phaser.Game) {
-        super(game, game.world.centerX, 32, 'hamster', 0);
+        super(game, game.world.centerX, 32, 'hamster-bumpster');
 
         this.game.add.existing(this);
         this.game.physics.enable(this, Phaser.Physics.ARCADE);
@@ -11,9 +13,14 @@ export class HamsterEntity extends Phaser.Sprite {
 
         body.collideWorldBounds = true;
         body.maxVelocity.y = 10000;
-        body.setSize(48, 48, 0, 0);
+        body.setSize(47, 34, 0, 0);
         body.velocity.x = 100;
         body.bounce.x = 1;
+
+        this.walk = this.animations.add('walk');
+        this.animations.play('walk', 30, true);
+
+        this.anchor.setTo(.5,.8);
 
         this.restartButton = this.game.input.keyboard.addKey(Phaser.Keyboard.R);
         this.restartButton.onDown.add(() => {
@@ -21,12 +28,15 @@ export class HamsterEntity extends Phaser.Sprite {
         }, this);
     }
 
-    render() {
-        this.game.debug.bodyInfo(this.body, 32, 32);
-        this.game.debug.body(this.body);
-    }
+    update() {
+        if (!this.isFlipped && this.body.velocity.x < 0) {
+            this.scale.x *= -1;
+            this.isFlipped = true;
+        }
 
-    turnAround() {
-        this.body.velocity.x = -this.body.velocity.x;
+        if (this.isFlipped && this.body.velocity.x > 0) {
+            this.scale.x *= -1;
+            this.isFlipped = false;
+        }
     }
 }

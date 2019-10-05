@@ -10,6 +10,8 @@ export class Preloader extends Phaser.State {
         this.game.load.image('tiles', 'bin/assets/grid.png');
         this.game.load.image('hamster', 'bin/assets/hamster.png');
         this.game.load.image('cursor', 'bin/assets/cursor.png');
+
+        this.game.load.spritesheet('hamster-bumpster', 'bin/assets/hamster_bumpster.png', 47, 34, 12);
     }
 
     create() {

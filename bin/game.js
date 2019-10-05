@@ -53,6 +53,7 @@ define("states/preloader", ["require", "exports"], function (require, exports) {
             this.game.load.image('tiles', 'bin/assets/grid.png');
             this.game.load.image('hamster', 'bin/assets/hamster.png');
             this.game.load.image('cursor', 'bin/assets/cursor.png');
+            this.game.load.spritesheet('hamster-bumpster', 'bin/assets/hamster_bumpster.png', 47, 34, 12);
         };
         Preloader.prototype.create = function () {
             var tween = this.add.tween(this.preloaderBar).to({
@@ -108,27 +109,33 @@ define("entities/hamster", ["require", "exports"], function (require, exports) {
     var HamsterEntity = /** @class */ (function (_super) {
         __extends(HamsterEntity, _super);
         function HamsterEntity(game) {
-            var _this = _super.call(this, game, game.world.centerX, 32, 'hamster', 0) || this;
+            var _this = _super.call(this, game, game.world.centerX, 32, 'hamster-bumpster') || this;
             _this.game.add.existing(_this);
             _this.game.physics.enable(_this, Phaser.Physics.ARCADE);
             var body = _this.body;
             body.collideWorldBounds = true;
             body.maxVelocity.y = 10000;
-            body.setSize(48, 48, 0, 0);
+            body.setSize(47, 34, 0, 0);
             body.velocity.x = 100;
             body.bounce.x = 1;
+            _this.walk = _this.animations.add('walk');
+            _this.animations.play('walk', 30, true);
+            _this.anchor.setTo(.5, .8);
             _this.restartButton = _this.game.input.keyboard.addKey(Phaser.Keyboard.R);
             _this.restartButton.onDown.add(function () {
                 _this.position.set(_this.game.world.centerX, 32);
             }, _this);
             return _this;
         }
-        HamsterEntity.prototype.render = function () {
-            this.game.debug.bodyInfo(this.body, 32, 32);
-            this.game.debug.body(this.body);
-        };
-        HamsterEntity.prototype.turnAround = function () {
-            this.body.velocity.x = -this.body.velocity.x;
+        HamsterEntity.prototype.update = function () {
+            if (!this.isFlipped && this.body.velocity.x < 0) {
+                this.scale.x *= -1;
+                this.isFlipped = true;
+            }
+            if (this.isFlipped && this.body.velocity.x > 0) {
+                this.scale.x *= -1;
+                this.isFlipped = false;
+            }
         };
         return HamsterEntity;
     }(Phaser.Sprite));
