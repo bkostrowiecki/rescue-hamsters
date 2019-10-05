@@ -50,7 +50,7 @@ define("states/preloader", ["require", "exports"], function (require, exports) {
         Preloader.prototype.preload = function () {
             this.preloaderBar = this.add.sprite(200, 550, 'preload-bar');
             this.load.setPreloadSprite(this.preloaderBar);
-            this.game.load.image('tiles', 'bin/assets/tiles.png');
+            this.game.load.image('tiles', 'bin/assets/grid.png');
         };
         Preloader.prototype.create = function () {
             var tween = this.add.tween(this.preloaderBar).to({
@@ -96,7 +96,8 @@ define("helpers/tiles", ["require", "exports"], function (require, exports) {
     var Tiles;
     (function (Tiles) {
         Tiles[Tiles["NONE"] = -1] = "NONE";
-        Tiles[Tiles["GROUND"] = 0] = "GROUND";
+        Tiles[Tiles["TOP_GROUND"] = 0] = "TOP_GROUND";
+        Tiles[Tiles["MIDDLE_GROUND"] = 1] = "MIDDLE_GROUND";
     })(Tiles = exports.Tiles || (exports.Tiles = {}));
 });
 /// <reference path="../../node_modules/phaser/typescript/phaser.d.ts" />
@@ -136,17 +137,30 @@ define("states/gameplay", ["require", "exports", "helpers/tiles"], function (req
             this.layer = this.map.createLayer(0);
             this.layer.resizeWorld();
             this.game.physics.startSystem(Phaser.Physics.ARCADE);
-            var currentTile = this.map.getTile(2, 3);
-            console.log(currentTile);
         };
         Gameplay.prototype.update = function () {
             if (this.game.input.mousePointer.isDown) {
+                if (this.game.input.mousePointer.x > this.TILE_SIZE * 30) {
+                    return;
+                }
+                var tileTypeToPlace = tiles_1.Tiles.NONE;
                 if (this.game.input.keyboard.isDown(Phaser.Keyboard.SHIFT)) {
-                    this.map.putTileWorldXY(tiles_1.Tiles.NONE, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.layer);
+                    tileTypeToPlace = tiles_1.Tiles.NONE;
                 }
                 else {
-                    this.map.putTileWorldXY(tiles_1.Tiles.GROUND, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.layer);
+                    var tileAbove = this.map.getTileWorldXY(this.game.input.mousePointer.x, this.game.input.mousePointer.y - this.TILE_SIZE, this.TILE_SIZE, this.TILE_SIZE);
+                    if (!!tileAbove && (tileAbove.index === tiles_1.Tiles.TOP_GROUND || tileAbove.index === tiles_1.Tiles.MIDDLE_GROUND)) {
+                        tileTypeToPlace = tiles_1.Tiles.MIDDLE_GROUND;
+                    }
+                    else {
+                        tileTypeToPlace = tiles_1.Tiles.TOP_GROUND;
+                    }
+                    var tileBelow = this.map.getTileWorldXY(this.game.input.mousePointer.x, this.game.input.mousePointer.y + this.TILE_SIZE);
+                    if (!!tileBelow && (tileBelow.index === tiles_1.Tiles.TOP_GROUND)) {
+                        this.map.putTileWorldXY(tiles_1.Tiles.MIDDLE_GROUND, tileBelow.worldX, tileBelow.worldY, this.TILE_SIZE, this.TILE_SIZE);
+                    }
                 }
+                this.map.putTileWorldXY(tileTypeToPlace, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.layer);
             }
         };
         Gameplay.prototype.render = function () {
@@ -168,7 +182,7 @@ define("game", ["require", "exports", "states/boot", "states/preloader", "states
             // Phaser.AUTO - determine the renderer automatically (canvas, webgl)
             // 'content' - the name of the container to add our game to
             // { preload:this.preload, create:this.create} - functions to call for our states
-            var _this = _super.call(this, 32 * 30, 32 * 20, Phaser.AUTO, 'content', null) || this;
+            var _this = _super.call(this, 32 * 32, 32 * 20, Phaser.AUTO, 'content', null) || this;
             _this.state.add('Boot', boot_1.Boot, false);
             _this.state.add('Preloader', preloader_1.Preloader, false);
             _this.state.add('Splash', splash_1.Splash, false);

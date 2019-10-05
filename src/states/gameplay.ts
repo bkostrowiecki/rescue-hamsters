@@ -44,18 +44,33 @@ export class Gameplay extends Phaser.State {
         this.layer.resizeWorld();
 
         this.game.physics.startSystem(Phaser.Physics.ARCADE);
-
-        let currentTile = this.map.getTile(2, 3);
-        console.log(currentTile);
     }
 
     update() {
         if (this.game.input.mousePointer.isDown) {
-            if (this.game.input.keyboard.isDown(Phaser.Keyboard.SHIFT)) {
-                this.map.putTileWorldXY(TileTypes.NONE, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.layer);
-            } else {
-                this.map.putTileWorldXY(TileTypes.GROUND, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.layer);
+            if (this.game.input.mousePointer.x > this.TILE_SIZE * 30) {
+                return;
             }
+
+            let tileTypeToPlace = TileTypes.NONE;
+
+            if (this.game.input.keyboard.isDown(Phaser.Keyboard.SHIFT)) {
+                tileTypeToPlace = TileTypes.NONE;
+            } else {
+                const tileAbove = this.map.getTileWorldXY(this.game.input.mousePointer.x, this.game.input.mousePointer.y - this.TILE_SIZE, this.TILE_SIZE, this.TILE_SIZE);
+                if (!!tileAbove && (tileAbove.index === TileTypes.TOP_GROUND || tileAbove.index === TileTypes.MIDDLE_GROUND)) {
+                    tileTypeToPlace = TileTypes.MIDDLE_GROUND;
+                } else {
+                    tileTypeToPlace = TileTypes.TOP_GROUND;
+                }
+
+                const tileBelow = this.map.getTileWorldXY(this.game.input.mousePointer.x, this.game.input.mousePointer.y + this.TILE_SIZE);
+                if (!!tileBelow && (tileBelow.index === TileTypes.TOP_GROUND)) {
+                    this.map.putTileWorldXY(TileTypes.MIDDLE_GROUND, tileBelow.worldX, tileBelow.worldY, this.TILE_SIZE, this.TILE_SIZE);
+                }
+            }
+
+            this.map.putTileWorldXY(tileTypeToPlace, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.layer);
         }
     }
 

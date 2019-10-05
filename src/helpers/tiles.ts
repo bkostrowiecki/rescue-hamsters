@@ -1,5 +1,6 @@
 export enum Tiles {
     NONE = -1,
-    GROUND = 0
+    TOP_GROUND = 0,
+    MIDDLE_GROUND = 1
 
 }
