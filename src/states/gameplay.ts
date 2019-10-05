@@ -222,6 +222,10 @@ export class Gameplay extends Phaser.State {
                 return;
             }
 
+            if (!this.checkIfPlayerCanPlaceTile()) {
+                return;
+            }
+
             if (this.game.input.keyboard.isDown(Phaser.Keyboard.SHIFT)) {
                 this.playerMap.putTileWorldXY(
                     TileTypes.NONE,
@@ -285,6 +289,15 @@ export class Gameplay extends Phaser.State {
             this.TILE_SIZE,
             this.playerMapLayer
         );
+    }
+
+    private checkIfPlayerCanPlaceTile() {
+        const tile = this.predefinedMap.getTileWorldXY(
+            this.game.input.mousePointer.x,
+            this.game.input.mousePointer.y
+        );
+
+        return !tile;
     }
 
     private updatePlayerTileSpring() {

@@ -288,6 +288,9 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                 if (this.game.input.mousePointer.x > this.TILE_SIZE * 30) {
                     return;
                 }
+                if (!this.checkIfPlayerCanPlaceTile()) {
+                    return;
+                }
                 if (this.game.input.keyboard.isDown(Phaser.Keyboard.SHIFT)) {
                     this.playerMap.putTileWorldXY(tiles_1.Tiles.NONE, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.playerMapLayer);
                     return;
@@ -316,6 +319,10 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                 this.playerMap.putTileWorldXY(tiles_1.Tiles.MIDDLE_GROUND, tileBelow.worldX, tileBelow.worldY, this.TILE_SIZE, this.TILE_SIZE);
             }
             this.playerMap.putTileWorldXY(tileTypeToPlace, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.playerMapLayer);
+        };
+        Gameplay.prototype.checkIfPlayerCanPlaceTile = function () {
+            var tile = this.predefinedMap.getTileWorldXY(this.game.input.mousePointer.x, this.game.input.mousePointer.y);
+            return !tile;
         };
         Gameplay.prototype.updatePlayerTileSpring = function () {
             var tileTypeToPlace = tiles_1.Tiles.SPRING;
