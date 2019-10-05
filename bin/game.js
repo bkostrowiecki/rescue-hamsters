@@ -50,6 +50,7 @@ define("states/preloader", ["require", "exports"], function (require, exports) {
         Preloader.prototype.preload = function () {
             this.preloaderBar = this.add.sprite(200, 550, 'preload-bar');
             this.load.setPreloadSprite(this.preloaderBar);
+            this.game.load.image('tiles', 'bin/assets/tiles.png');
         };
         Preloader.prototype.create = function () {
             var tween = this.add.tween(this.preloaderBar).to({
@@ -89,20 +90,64 @@ define("states/splash", ["require", "exports"], function (require, exports) {
     }(Phaser.State));
     exports.Splash = Splash;
 });
+define("helpers/tiles", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var Tiles;
+    (function (Tiles) {
+        Tiles[Tiles["NONE"] = -1] = "NONE";
+        Tiles[Tiles["GROUND"] = 0] = "GROUND";
+    })(Tiles = exports.Tiles || (exports.Tiles = {}));
+});
 /// <reference path="../../node_modules/phaser/typescript/phaser.d.ts" />
-define("states/gameplay", ["require", "exports"], function (require, exports) {
+define("states/gameplay", ["require", "exports", "helpers/tiles"], function (require, exports, tiles_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Gameplay = /** @class */ (function (_super) {
         __extends(Gameplay, _super);
         function Gameplay() {
-            return _super !== null && _super.apply(this, arguments) || this;
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.MAP_WIDTH = 240;
+            _this.MAP_HEIGHT = 240;
+            _this.TILE_SIZE = 32;
+            return _this;
         }
         Gameplay.prototype.preload = function () {
         };
+        Gameplay.prototype.generateCsvMapFromArray = function () {
+            var data = '';
+            for (var iy = 0; iy < this.MAP_WIDTH; iy++) {
+                for (var jx = 0; jx < this.MAP_HEIGHT; jx++) {
+                    data += tiles_1.Tiles.NONE;
+                    if (jx < this.MAP_WIDTH) {
+                        data += ',';
+                    }
+                }
+                if (iy < this.MAP_HEIGHT) {
+                    data += '\n';
+                }
+            }
+            return data;
+        };
         Gameplay.prototype.create = function () {
+            this.game.cache.addTilemap('dynamicMap', null, this.generateCsvMapFromArray(), Phaser.Tilemap.CSV);
+            this.map = this.game.add.tilemap('dynamicMap', this.TILE_SIZE, this.TILE_SIZE);
+            this.map.addTilesetImage('tiles', 'tiles', this.TILE_SIZE, this.TILE_SIZE);
+            this.layer = this.map.createLayer(0);
+            this.layer.resizeWorld();
+            this.game.physics.startSystem(Phaser.Physics.ARCADE);
+            var currentTile = this.map.getTile(2, 3);
+            console.log(currentTile);
         };
         Gameplay.prototype.update = function () {
+            if (this.game.input.mousePointer.isDown) {
+                if (this.game.input.keyboard.isDown(Phaser.Keyboard.SHIFT)) {
+                    this.map.putTileWorldXY(tiles_1.Tiles.NONE, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.layer);
+                }
+                else {
+                    this.map.putTileWorldXY(tiles_1.Tiles.GROUND, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.layer);
+                }
+            }
         };
         Gameplay.prototype.render = function () {
         };
@@ -123,7 +168,7 @@ define("game", ["require", "exports", "states/boot", "states/preloader", "states
             // Phaser.AUTO - determine the renderer automatically (canvas, webgl)
             // 'content' - the name of the container to add our game to
             // { preload:this.preload, create:this.create} - functions to call for our states
-            var _this = _super.call(this, 1000, 700, Phaser.AUTO, 'content', null) || this;
+            var _this = _super.call(this, 32 * 30, 32 * 20, Phaser.AUTO, 'content', null) || this;
             _this.state.add('Boot', boot_1.Boot, false);
             _this.state.add('Preloader', preloader_1.Preloader, false);
             _this.state.add('Splash', splash_1.Splash, false);
