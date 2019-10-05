@@ -116,13 +116,13 @@ define("entities/hamster", ["require", "exports"], function (require, exports) {
             _this.game.physics.enable(_this, Phaser.Physics.ARCADE);
             var body = _this.body;
             body.collideWorldBounds = true;
-            body.maxVelocity.y = 10000;
-            body.setSize(47, 34, 0, 0);
+            body.maxVelocity.y = 666;
+            _this.anchor.setTo(.32, .5);
+            body.setSize(30, 32, 0, 0);
             body.velocity.x = 100;
             body.bounce.x = 1;
             _this.walk = _this.animations.add('walk');
             _this.animations.play('walk', 30, true);
-            _this.anchor.setTo(.5, .8);
             _this.restartButton = _this.game.input.keyboard.addKey(Phaser.Keyboard.R);
             _this.restartButton.onDown.add(function () {
                 _this.position.set(_this.game.world.centerX, 32);
@@ -219,7 +219,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             this.game.world.setBounds(0, 0, this.TILE_SIZE * 30, this.TILE_SIZE * 20);
             this.hamster = new hamster_1.HamsterEntity(this.game);
             this.cursor = new cursor_1.CursorEntity(this.game);
-            this.map.setCollisionBetween(0, 3);
+            this.map.setCollisionBetween(0, 22);
             this.currentTile = PlayerTileType.GROUND;
             this.groundButton = this.game.input.keyboard.addKey(Phaser.Keyboard.NUMPAD_1);
             this.groundButton.onDown.add(function () {
@@ -232,14 +232,13 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             this.map.setTileIndexCallback(2, function (sprite, tile) {
                 if (sprite instanceof hamster_1.HamsterEntity) {
                     var hammsterBody = sprite.body;
-                    hammsterBody.velocity.y = -666;
+                    hammsterBody.velocity.set(hammsterBody.velocity.x, -666 - hammsterBody.velocity.y);
                 }
             }, this);
         };
         Gameplay.prototype.update = function () {
-            var _this = this;
-            this.game.physics.arcade.collide(this.hamster, this.layer, function () {
-                var hamsterBody = _this.hamster.body;
+            this.game.physics.arcade.collide(this.hamster, this.layer, function (a, b) {
+                console.log(a, b);
             });
             if (this.game.input.mousePointer.isDown) {
                 if (this.game.input.mousePointer.x > this.TILE_SIZE * 30) {

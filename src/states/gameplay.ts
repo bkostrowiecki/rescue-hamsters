@@ -72,7 +72,7 @@ export class Gameplay extends Phaser.State {
         this.hamster = new HamsterEntity(this.game);
         this.cursor = new CursorEntity(this.game);
 
-        this.map.setCollisionBetween(0, 3);
+        this.map.setCollisionBetween(0, 22);
 
         this.currentTile = PlayerTileType.GROUND;
 
@@ -89,14 +89,14 @@ export class Gameplay extends Phaser.State {
         this.map.setTileIndexCallback(2, (sprite: any, tile: any) => {
             if (sprite instanceof HamsterEntity) {
                 const hammsterBody = sprite.body as Phaser.Physics.Arcade.Body;
-                hammsterBody.velocity.y = -666
+                hammsterBody.velocity.set(hammsterBody.velocity.x, -666 - hammsterBody.velocity.y);
             }
         }, this);
     }
 
     update() {
-        this.game.physics.arcade.collide(this.hamster, this.layer, () => {
-            const hamsterBody = this.hamster.body as Phaser.Physics.Arcade.Body;
+        this.game.physics.arcade.collide(this.hamster, this.layer, (a, b) => {
+            console.log(a, b);
         });
 
         if (this.game.input.mousePointer.isDown) {

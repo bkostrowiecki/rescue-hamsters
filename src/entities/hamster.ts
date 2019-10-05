@@ -1,8 +1,13 @@
+import { Pointer } from "phaser";
+import { PointerEntity } from "./pointer";
+
 export class HamsterEntity extends Phaser.Sprite {
     private restartButton;
     private isFlipped;
     private isSpringJumping;
     private walk;
+
+    private pointer;
 
     constructor(game: Phaser.Game) {
         super(game, game.world.centerX, 32, 'hamster-bumpster');
@@ -13,15 +18,14 @@ export class HamsterEntity extends Phaser.Sprite {
         const body = this.body as Phaser.Physics.Arcade.Body;
 
         body.collideWorldBounds = true;
-        body.maxVelocity.y = 10000;
-        body.setSize(47, 34, 0, 0);
+        body.maxVelocity.y = 666;
+        this.anchor.setTo(.32,.5);
+        body.setSize(30, 32, 0, 0);
         body.velocity.x = 100;
         body.bounce.x = 1;
 
         this.walk = this.animations.add('walk');
         this.animations.play('walk', 30, true);
-
-        this.anchor.setTo(.5,.8);
 
         this.restartButton = this.game.input.keyboard.addKey(Phaser.Keyboard.R);
         this.restartButton.onDown.add(() => {
