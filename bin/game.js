@@ -51,6 +51,8 @@ define("states/preloader", ["require", "exports"], function (require, exports) {
             this.preloaderBar = this.add.sprite(200, 550, 'preload-bar');
             this.load.setPreloadSprite(this.preloaderBar);
             this.game.load.image('tiles', 'bin/assets/grid.png');
+            this.game.load.image('hamster', 'bin/assets/hamster.png');
+            this.game.load.image('cursor', 'bin/assets/cursor.png');
         };
         Preloader.prototype.create = function () {
             var tween = this.add.tween(this.preloaderBar).to({
@@ -100,8 +102,50 @@ define("helpers/tiles", ["require", "exports"], function (require, exports) {
         Tiles[Tiles["MIDDLE_GROUND"] = 1] = "MIDDLE_GROUND";
     })(Tiles = exports.Tiles || (exports.Tiles = {}));
 });
+define("entities/hamster", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var HamsterEntity = /** @class */ (function (_super) {
+        __extends(HamsterEntity, _super);
+        function HamsterEntity(game) {
+            var _this = _super.call(this, game, game.world.centerX, game.world.centerY, 'hamster', 0) || this;
+            _this.game.add.existing(_this);
+            _this.game.physics.enable(_this, Phaser.Physics.ARCADE);
+            var body = _this.body;
+            body.collideWorldBounds = true;
+            body.maxVelocity.y = 10000;
+            body.setSize(48, 48, 0, 0);
+            body.velocity.x = 100;
+            return _this;
+        }
+        HamsterEntity.prototype.render = function () {
+            this.game.debug.bodyInfo(this, 32, 32);
+            this.game.debug.body(this);
+        };
+        return HamsterEntity;
+    }(Phaser.Sprite));
+    exports.HamsterEntity = HamsterEntity;
+});
+define("entities/cursor", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var CursorEntity = /** @class */ (function (_super) {
+        __extends(CursorEntity, _super);
+        function CursorEntity(game) {
+            var _this = _super.call(this, game, game.world.centerX, game.world.centerY, 'cursor', 0) || this;
+            _this.game.add.existing(_this);
+            return _this;
+        }
+        CursorEntity.prototype.update = function () {
+            this.x = this.game.input.mousePointer.x - 8;
+            this.y = this.game.input.mousePointer.y;
+        };
+        return CursorEntity;
+    }(Phaser.Sprite));
+    exports.CursorEntity = CursorEntity;
+});
 /// <reference path="../../node_modules/phaser/typescript/phaser.d.ts" />
-define("states/gameplay", ["require", "exports", "helpers/tiles"], function (require, exports, tiles_1) {
+define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hamster", "entities/cursor"], function (require, exports, tiles_1, hamster_1, cursor_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Gameplay = /** @class */ (function (_super) {
@@ -137,6 +181,10 @@ define("states/gameplay", ["require", "exports", "helpers/tiles"], function (req
             this.layer = this.map.createLayer(0);
             this.layer.resizeWorld();
             this.game.physics.startSystem(Phaser.Physics.ARCADE);
+            this.game.physics.arcade.gravity.y = 1000;
+            this.game.world.setBounds(0, 0, this.TILE_SIZE * 30, this.TILE_SIZE * 20);
+            this.hamster = new hamster_1.HamsterEntity(this.game);
+            this.cursor = new cursor_1.CursorEntity(this.game);
         };
         Gameplay.prototype.update = function () {
             if (this.game.input.mousePointer.isDown) {

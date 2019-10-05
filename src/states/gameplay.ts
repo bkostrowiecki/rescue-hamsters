@@ -1,6 +1,8 @@
 /// <reference path="../../node_modules/phaser/typescript/phaser.d.ts" />
 
 import { Tiles as TileTypes } from "../helpers/tiles";
+import { HamsterEntity } from "../entities/hamster";
+import { CursorEntity } from "../entities/cursor";
 
 export class Gameplay extends Phaser.State {
     private MAP_WIDTH = 240;
@@ -10,6 +12,9 @@ export class Gameplay extends Phaser.State {
 
     private map: Phaser.Tilemap;
     private layer: Phaser.TilemapLayer;
+
+    private hamster: HamsterEntity;
+    private cursor: CursorEntity;
 
     preload() {
     }
@@ -44,6 +49,12 @@ export class Gameplay extends Phaser.State {
         this.layer.resizeWorld();
 
         this.game.physics.startSystem(Phaser.Physics.ARCADE);
+        this.game.physics.arcade.gravity.y = 1000;
+
+        this.game.world.setBounds(0, 0, this.TILE_SIZE * 30, this.TILE_SIZE * 20);
+
+        this.hamster = new HamsterEntity(this.game);
+        this.cursor = new CursorEntity(this.game);
     }
 
     update() {

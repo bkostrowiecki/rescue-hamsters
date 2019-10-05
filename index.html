@@ -13,19 +13,21 @@
             background: #323232;
         }
 
-        #content {
+        #content-wrapper {
             margin: 0 auto;
             display: block;
             width: 1000px;
         }
 
-        canvas {
+        #content {
             cursor: none;
         }
     </style>
 </head>
 <body>
-    <div id="content"></div>
+    <div id="content-wrapper">
+        <div id="content"></div>
+    </div>
     <script>
         require(['game'], function (game) {
             game.default();
