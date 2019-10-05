@@ -277,7 +277,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
         };
         Gameplay.prototype.render = function () {
             this.game.debug.bodyInfo(this.hamster, 0, 0);
-            this.game.debug.body(this.hamster);
+            // this.game.debug.body(this.hamster);
         };
         return Gameplay;
     }(Phaser.State));

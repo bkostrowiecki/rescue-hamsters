@@ -1,5 +1,4 @@
 import { Pointer } from "phaser";
-import { PointerEntity } from "./pointer";
 
 export class HamsterEntity extends Phaser.Sprite {
     private restartButton;
