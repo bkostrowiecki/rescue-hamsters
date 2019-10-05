@@ -17,6 +17,7 @@ export class HamsterEntity extends Phaser.Sprite {
         const body = this.body as Phaser.Physics.Arcade.Body;
 
         body.collideWorldBounds = true;
+        body.skipQuadTree = true;
         body.maxVelocity.y = 600;
         this.anchor.setTo(.32,.5);
         body.setSize(30, 32, 0, 0);
@@ -29,6 +30,7 @@ export class HamsterEntity extends Phaser.Sprite {
         this.restartButton = this.game.input.keyboard.addKey(Phaser.Keyboard.R);
         this.restartButton.onDown.add(() => {
             this.position.set(this.game.world.centerX, 32);
+            this.body.velocity.y = 0;
         }, this);
     }
 

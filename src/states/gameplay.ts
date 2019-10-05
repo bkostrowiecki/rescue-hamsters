@@ -33,6 +33,9 @@ export class Gameplay extends Phaser.State {
 
     private startPoint: Phaser.Point;
 
+    private deathCounter = 0;
+    private savedCounter = 0;
+
     preload() {}
 
     private generateCsvMapFromArray() {
@@ -80,8 +83,20 @@ export class Gameplay extends Phaser.State {
         this.setupPredefinedMap();
         this.setupPlayerMap();
 
+        this.setupPhysics();
+
+        this.hamster = new HamsterEntity(this.game);
+        this.cursor = new CursorEntity(this.game);
+
+        this.hamster.position.set(this.startPoint.x, this.startPoint.y);
+    }
+
+    private setupPhysics() {
         this.game.physics.startSystem(Phaser.Physics.ARCADE);
         this.game.physics.arcade.gravity.y = 1000;
+
+        this.game.physics.arcade.checkCollision.down = false;
+        this.game.physics.arcade.checkCollision.up = false;
 
         this.game.world.setBounds(
             0,
@@ -89,11 +104,6 @@ export class Gameplay extends Phaser.State {
             this.TILE_SIZE * 30,
             this.TILE_SIZE * 20
         );
-
-        this.hamster = new HamsterEntity(this.game);
-        this.cursor = new CursorEntity(this.game);
-
-        this.hamster.position.set(this.startPoint.x, this.startPoint.y);
     }
 
     private setupPlayerMap() {
@@ -213,15 +223,9 @@ export class Gameplay extends Phaser.State {
     }
 
     update() {
-        this.game.physics.arcade.collide(
-            this.hamster,
-            this.playerMapLayer
-        );
+        this.game.physics.arcade.collide(this.hamster, this.playerMapLayer);
 
-        this.game.physics.arcade.collide(
-            this.hamster,
-            this.predefinedMapLayer
-        );
+        this.game.physics.arcade.collide(this.hamster, this.predefinedMapLayer);
 
         if (this.game.input.mousePointer.isDown) {
             if (this.game.input.mousePointer.x > this.TILE_SIZE * 30) {

@@ -120,6 +120,7 @@ define("entities/hamster", ["require", "exports"], function (require, exports) {
             _this.game.physics.enable(_this, Phaser.Physics.ARCADE);
             var body = _this.body;
             body.collideWorldBounds = true;
+            body.skipQuadTree = true;
             body.maxVelocity.y = 600;
             _this.anchor.setTo(.32, .5);
             body.setSize(30, 32, 0, 0);
@@ -130,6 +131,7 @@ define("entities/hamster", ["require", "exports"], function (require, exports) {
             _this.restartButton = _this.game.input.keyboard.addKey(Phaser.Keyboard.R);
             _this.restartButton.onDown.add(function () {
                 _this.position.set(_this.game.world.centerX, 32);
+                _this.body.velocity.y = 0;
             }, _this);
             return _this;
         }
@@ -185,6 +187,8 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             _this.MAP_WIDTH = 240;
             _this.MAP_HEIGHT = 240;
             _this.TILE_SIZE = 32;
+            _this.deathCounter = 0;
+            _this.savedCounter = 0;
             return _this;
         }
         Gameplay.prototype.preload = function () { };
@@ -216,12 +220,17 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             this.setupUi();
             this.setupPredefinedMap();
             this.setupPlayerMap();
-            this.game.physics.startSystem(Phaser.Physics.ARCADE);
-            this.game.physics.arcade.gravity.y = 1000;
-            this.game.world.setBounds(0, 0, this.TILE_SIZE * 30, this.TILE_SIZE * 20);
+            this.setupPhysics();
             this.hamster = new hamster_1.HamsterEntity(this.game);
             this.cursor = new cursor_1.CursorEntity(this.game);
             this.hamster.position.set(this.startPoint.x, this.startPoint.y);
+        };
+        Gameplay.prototype.setupPhysics = function () {
+            this.game.physics.startSystem(Phaser.Physics.ARCADE);
+            this.game.physics.arcade.gravity.y = 1000;
+            this.game.physics.arcade.checkCollision.down = false;
+            this.game.physics.arcade.checkCollision.up = false;
+            this.game.world.setBounds(0, 0, this.TILE_SIZE * 30, this.TILE_SIZE * 20);
         };
         Gameplay.prototype.setupPlayerMap = function () {
             this.playerMap = this.game.add.tilemap('dynamicMap', this.TILE_SIZE, this.TILE_SIZE);
