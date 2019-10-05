@@ -17,7 +17,7 @@ export class HamsterEntity extends Phaser.Sprite {
         const body = this.body as Phaser.Physics.Arcade.Body;
 
         body.collideWorldBounds = true;
-        body.maxVelocity.y = 666;
+        body.maxVelocity.y = 600;
         this.anchor.setTo(.32,.5);
         body.setSize(30, 32, 0, 0);
         body.velocity.x = 100;
