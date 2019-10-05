@@ -255,10 +255,13 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             throw new Error('Cannot find a start point for this map');
         };
         Gameplay.prototype.setupUi = function () {
-            var _this = this;
             var frame = this.game.add.image(this.game.world.width, 0, 'frame');
             frame.anchor.set(1, 0);
             this.currentTile = PlayerTileType.GROUND;
+            this.activateGroundTile();
+        };
+        Gameplay.prototype.activateGroundTile = function () {
+            var _this = this;
             this.groundKey = this.game.input.keyboard.addKey(Phaser.Keyboard.NUMPAD_1);
             this.groundKey.onDown.add(function () {
                 _this.currentTile = PlayerTileType.GROUND;
@@ -269,6 +272,9 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             this.groundButton.events.onInputDown.add(function () {
                 _this.currentTile = PlayerTileType.GROUND;
             }, this);
+        };
+        Gameplay.prototype.activateSpringTile = function () {
+            var _this = this;
             this.springKey = this.game.input.keyboard.addKey(Phaser.Keyboard.NUMPAD_2);
             this.springKey.onDown.add(function () {
                 _this.currentTile = PlayerTileType.SPRING;

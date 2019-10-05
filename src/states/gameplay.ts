@@ -168,6 +168,10 @@ export class Gameplay extends Phaser.State {
 
         this.currentTile = PlayerTileType.GROUND;
 
+        this.activateGroundTile();
+    }
+
+    private activateGroundTile() {
         this.groundKey = this.game.input.keyboard.addKey(
             Phaser.Keyboard.NUMPAD_1
         );
@@ -185,7 +189,9 @@ export class Gameplay extends Phaser.State {
         this.groundButton.events.onInputDown.add(() => {
             this.currentTile = PlayerTileType.GROUND;
         }, this);
+    }
 
+    private activateSpringTile() {
         this.springKey = this.game.input.keyboard.addKey(
             Phaser.Keyboard.NUMPAD_2
         );
