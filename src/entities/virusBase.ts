@@ -1,5 +1,4 @@
 /// <reference path="../../node_modules/phaser/typescript/phaser.d.ts" />
-import { RandomGenerator } from '../helpers/randomGenerator';
 
 export class VirusBase extends Phaser.Sprite {
     attackCallback: Function = () => {};
