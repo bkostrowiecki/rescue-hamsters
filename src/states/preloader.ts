@@ -8,7 +8,10 @@ export class Preloader extends Phaser.State {
         this.load.setPreloadSprite(this.preloaderBar);
 
         this.game.load.image('tiles', 'bin/assets/grid.png');
+        this.game.load.image('predefined-tiles', 'bin/assets/predefined.png');
+
         this.game.load.spritesheet('tiles-sheet', 'bin/assets/grid.png', 32, 32);
+
         this.game.load.image('hamster', 'bin/assets/hamster.png');
         this.game.load.image('cursor', 'bin/assets/cursor.png');
 
@@ -16,6 +19,8 @@ export class Preloader extends Phaser.State {
 
         this.game.load.image('background', 'bin/assets/background.png');
         this.game.load.image('frame', 'bin/assets/frame.png');
+
+        this.game.load.tilemap('level-01', 'bin/assets/level01.csv');
     }
 
     create() {

@@ -51,12 +51,14 @@ define("states/preloader", ["require", "exports"], function (require, exports) {
             this.preloaderBar = this.add.sprite(200, 550, 'preload-bar');
             this.load.setPreloadSprite(this.preloaderBar);
             this.game.load.image('tiles', 'bin/assets/grid.png');
+            this.game.load.image('predefined-tiles', 'bin/assets/predefined.png');
             this.game.load.spritesheet('tiles-sheet', 'bin/assets/grid.png', 32, 32);
             this.game.load.image('hamster', 'bin/assets/hamster.png');
             this.game.load.image('cursor', 'bin/assets/cursor.png');
             this.game.load.spritesheet('hamster-bumpster', 'bin/assets/hamster_bumpster.png', 47, 34, 12);
             this.game.load.image('background', 'bin/assets/background.png');
             this.game.load.image('frame', 'bin/assets/frame.png');
+            this.game.load.tilemap('level-01', 'bin/assets/level01.csv');
         };
         Preloader.prototype.create = function () {
             var tween = this.add.tween(this.preloaderBar).to({
@@ -212,21 +214,45 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             background.anchor.set(0.5);
             background.scale.set(1.2);
             this.setupUi();
-            this.map = this.game.add.tilemap('dynamicMap', this.TILE_SIZE, this.TILE_SIZE);
-            this.map.addTilesetImage('tiles', 'tiles', this.TILE_SIZE, this.TILE_SIZE);
-            this.layer = this.map.createLayer(0);
+            this.setupPredefinedMap();
+            this.setupPlayerMap();
             this.game.physics.startSystem(Phaser.Physics.ARCADE);
             this.game.physics.arcade.gravity.y = 1000;
             this.game.world.setBounds(0, 0, this.TILE_SIZE * 30, this.TILE_SIZE * 20);
             this.hamster = new hamster_1.HamsterEntity(this.game);
             this.cursor = new cursor_1.CursorEntity(this.game);
-            this.map.setCollisionBetween(0, 2);
-            this.map.setTileIndexCallback(2, function (sprite, tile) {
+            this.hamster.position.set(this.startPoint.x, this.startPoint.y);
+        };
+        Gameplay.prototype.setupPlayerMap = function () {
+            this.playerMap = this.game.add.tilemap('dynamicMap', this.TILE_SIZE, this.TILE_SIZE);
+            this.playerMap.addTilesetImage('tiles', 'tiles', this.TILE_SIZE, this.TILE_SIZE);
+            this.playerMapLayer = this.playerMap.createLayer(0);
+            this.playerMap.setCollisionBetween(0, 2);
+            this.playerMap.setTileIndexCallback(2, function (sprite, tile) {
                 if (sprite instanceof hamster_1.HamsterEntity) {
                     var hammsterBody = sprite.body;
                     hammsterBody.velocity.set(hammsterBody.velocity.x, -600);
                 }
             }, this);
+        };
+        Gameplay.prototype.setupPredefinedMap = function () {
+            this.predefinedMap = this.game.add.tilemap('level-01', 32, 32);
+            this.predefinedMap.addTilesetImage('predefined-tiles');
+            this.predefinedMapLayer = this.predefinedMap.createLayer(0);
+            this.startPoint = this.findStartLocation();
+            this.predefinedMap.setTileIndexCallback(1, function () {
+                console.log('won!');
+            }, this);
+        };
+        Gameplay.prototype.findStartLocation = function () {
+            var mapArray = this.predefinedMapLayer.getTiles(0, 0, this.world.width, this.world.height);
+            for (var i = 0; i < mapArray.length; i++) {
+                var myTile = mapArray[i];
+                if (myTile.index == 0) {
+                    return new Phaser.Point(myTile.worldX, myTile.worldY);
+                }
+            }
+            throw new Error('Cannot find a start point for this map');
         };
         Gameplay.prototype.setupUi = function () {
             var _this = this;
@@ -256,15 +282,14 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             }, this);
         };
         Gameplay.prototype.update = function () {
-            this.game.physics.arcade.collide(this.hamster, this.layer, function (a, b) {
-                console.log(a, b);
-            });
+            this.game.physics.arcade.collide(this.hamster, this.playerMapLayer);
+            this.game.physics.arcade.collide(this.hamster, this.predefinedMapLayer);
             if (this.game.input.mousePointer.isDown) {
                 if (this.game.input.mousePointer.x > this.TILE_SIZE * 30) {
                     return;
                 }
                 if (this.game.input.keyboard.isDown(Phaser.Keyboard.SHIFT)) {
-                    this.map.putTileWorldXY(tiles_1.Tiles.NONE, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.layer);
+                    this.playerMap.putTileWorldXY(tiles_1.Tiles.NONE, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.playerMapLayer);
                     return;
                 }
                 if (this.currentTile === PlayerTileType.GROUND) {
@@ -277,26 +302,28 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
         };
         Gameplay.prototype.updatePlayerTileGround = function () {
             var tileTypeToPlace = tiles_1.Tiles.NONE;
-            var tileAbove = this.map.getTileWorldXY(this.game.input.mousePointer.x, this.game.input.mousePointer.y - this.TILE_SIZE, this.TILE_SIZE, this.TILE_SIZE);
-            if (!!tileAbove && (tileAbove.index === tiles_1.Tiles.TOP_GROUND || tileAbove.index === tiles_1.Tiles.MIDDLE_GROUND)) {
+            var tileAbove = this.playerMap.getTileWorldXY(this.game.input.mousePointer.x, this.game.input.mousePointer.y - this.TILE_SIZE, this.TILE_SIZE, this.TILE_SIZE);
+            if (!!tileAbove &&
+                (tileAbove.index === tiles_1.Tiles.TOP_GROUND ||
+                    tileAbove.index === tiles_1.Tiles.MIDDLE_GROUND)) {
                 tileTypeToPlace = tiles_1.Tiles.MIDDLE_GROUND;
             }
             else {
                 tileTypeToPlace = tiles_1.Tiles.TOP_GROUND;
             }
-            var tileBelow = this.map.getTileWorldXY(this.game.input.mousePointer.x, this.game.input.mousePointer.y + this.TILE_SIZE);
+            var tileBelow = this.playerMap.getTileWorldXY(this.game.input.mousePointer.x, this.game.input.mousePointer.y + this.TILE_SIZE);
             if (!!tileBelow && tileBelow.index === tiles_1.Tiles.TOP_GROUND) {
-                this.map.putTileWorldXY(tiles_1.Tiles.MIDDLE_GROUND, tileBelow.worldX, tileBelow.worldY, this.TILE_SIZE, this.TILE_SIZE);
+                this.playerMap.putTileWorldXY(tiles_1.Tiles.MIDDLE_GROUND, tileBelow.worldX, tileBelow.worldY, this.TILE_SIZE, this.TILE_SIZE);
             }
-            this.map.putTileWorldXY(tileTypeToPlace, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.layer);
+            this.playerMap.putTileWorldXY(tileTypeToPlace, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.playerMapLayer);
         };
         Gameplay.prototype.updatePlayerTileSpring = function () {
             var tileTypeToPlace = tiles_1.Tiles.SPRING;
-            this.map.putTileWorldXY(tileTypeToPlace, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.layer);
+            this.playerMap.putTileWorldXY(tileTypeToPlace, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.playerMapLayer);
         };
         Gameplay.prototype.render = function () {
-            this.game.debug.bodyInfo(this.hamster, 0, 0);
-            this.game.debug.body(this.hamster);
+            // this.game.debug.bodyInfo(this.hamster, 0, 0);
+            // this.game.debug.body(this.hamster);
         };
         return Gameplay;
     }(Phaser.State));

@@ -3,5 +3,9 @@
 		"target": "ES5",
 		"module": "amd",
 		"sourceMap": false
-	}
+	},
+	"exclude": [
+		"resources/",
+		"node_modules/"
+	]
 }
