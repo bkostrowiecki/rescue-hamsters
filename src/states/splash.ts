@@ -46,6 +46,9 @@ export class Splash extends Phaser.State {
         this.clickToPlay.anchor.set(0.5);
 
         this.cursor = new CursorEntity(this.game);
+
+        const music = new Phaser.Sound(this.game, 'music', 1, true);
+        music.play();
     }
 
     onTap() {

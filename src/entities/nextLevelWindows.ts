@@ -14,9 +14,9 @@ export class NextLevelWindow extends Phaser.Group {
 
         this.game.add.group(this);
 
-        this.screenMask = this.game.add.image(0, 0, 'mask');
-        this.screenMask.scale.set(this.game.canvas.width, this.game.canvas.height);
-        this.add(this.screenMask);
+        // this.screenMask = this.game.add.image(0, 0, 'mask');
+        // this.screenMask.scale.set(this.game.canvas.width, this.game.canvas.height);
+        // this.add(this.screenMask);
 
         this.finishLevelWindow = this.game.add.sprite(this.game.canvas.width / 2 , this.game.canvas.height / 2, 'next-level-window');
         this.finishLevelWindow.anchor.set(0.5, 0.5);

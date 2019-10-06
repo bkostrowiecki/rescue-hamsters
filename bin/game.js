@@ -49,6 +49,8 @@ define("states/preloader", ["require", "exports"], function (require, exports) {
         }
         Preloader.prototype.preload = function () {
             this.preloaderBar = this.add.sprite(200, 550, 'preload-bar');
+            this.preloaderBar.anchor.set(0.5, 0.5);
+            this.preloaderBar.position.set(this.world.centerX, this.world.centerY);
             this.load.setPreloadSprite(this.preloaderBar);
             this.game.load.image('hamster-big', 'bin/assets/hamster-big.png');
             this.game.load.image('tiles', 'bin/assets/grid.png');
@@ -68,13 +70,12 @@ define("states/preloader", ["require", "exports"], function (require, exports) {
             this.game.load.tilemap('level-03', 'bin/assets/level03.csv');
             this.game.load.audio('select-tile', 'bin/assets/select-tile.ogg');
             this.game.load.spritesheet('button', 'bin/assets/next-level-button.png', 193, 71);
+            this.game.load.audio('music', 'bin/assets/music.ogg');
         };
         Preloader.prototype.create = function () {
             var tween = this.add.tween(this.preloaderBar).to({
                 alpha: 0
             }, 1000, Phaser.Easing.Linear.None, true);
-            this.preloaderBar.anchor.set(0.5, 0.5);
-            this.preloaderBar.position.set(this.world.centerX, this.world.centerY);
             tween.onComplete.add(this.startSplash, this);
             this.game.input.gamepad.start();
         };
@@ -158,6 +159,8 @@ define("states/splash", ["require", "exports", "entities/wobblingText", "entitie
             this.clickToPlay = new wobblingText_1.WobblingText(this.game, this.game.world.centerX, this.game.world.centerY + 200, 'Click here to play!', this.getFontStyles('60px'), 1000);
             this.clickToPlay.anchor.set(0.5);
             this.cursor = new cursor_1.CursorEntity(this.game);
+            var music = new Phaser.Sound(this.game, 'music', 1, true);
+            music.play();
         };
         Splash.prototype.onTap = function () {
             this.game.state.start('Gameplay', true, false);
@@ -289,9 +292,9 @@ define("entities/nextLevelWindows", ["require", "exports"], function (require, e
         function NextLevelWindow(game, saved, deaths) {
             var _this = _super.call(this, game) || this;
             _this.game.add.group(_this);
-            _this.screenMask = _this.game.add.image(0, 0, 'mask');
-            _this.screenMask.scale.set(_this.game.canvas.width, _this.game.canvas.height);
-            _this.add(_this.screenMask);
+            // this.screenMask = this.game.add.image(0, 0, 'mask');
+            // this.screenMask.scale.set(this.game.canvas.width, this.game.canvas.height);
+            // this.add(this.screenMask);
             _this.finishLevelWindow = _this.game.add.sprite(_this.game.canvas.width / 2, _this.game.canvas.height / 2, 'next-level-window');
             _this.finishLevelWindow.anchor.set(0.5, 0.5);
             _this.add(_this.finishLevelWindow);

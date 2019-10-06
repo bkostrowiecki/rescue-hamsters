@@ -5,6 +5,10 @@ export class Preloader extends Phaser.State {
 
     preload() {
         this.preloaderBar = this.add.sprite(200, 550, 'preload-bar');
+        
+        this.preloaderBar.anchor.set(0.5, 0.5);
+        this.preloaderBar.position.set(this.world.centerX, this.world.centerY);
+
         this.load.setPreloadSprite(this.preloaderBar);
 
         this.game.load.image('hamster-big' ,'bin/assets/hamster-big.png');
@@ -35,15 +39,14 @@ export class Preloader extends Phaser.State {
         this.game.load.audio('select-tile', 'bin/assets/select-tile.ogg');
 
         this.game.load.spritesheet('button', 'bin/assets/next-level-button.png', 193, 71);
+
+        this.game.load.audio('music', 'bin/assets/music.ogg');
     }
 
     create() {
         var tween = this.add.tween(this.preloaderBar).to({
             alpha: 0
         }, 1000, Phaser.Easing.Linear.None, true);
-
-        this.preloaderBar.anchor.set(0.5, 0.5);
-        this.preloaderBar.position.set(this.world.centerX, this.world.centerY);
 
         tween.onComplete.add(this.startSplash, this);
 
