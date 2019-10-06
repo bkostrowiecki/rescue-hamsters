@@ -7,6 +7,8 @@ export class Preloader extends Phaser.State {
         this.preloaderBar = this.add.sprite(200, 550, 'preload-bar');
         this.load.setPreloadSprite(this.preloaderBar);
 
+        this.game.load.image('hamster-big' ,'bin/assets/hamster-big.png');
+
         this.game.load.image('tiles', 'bin/assets/grid.png');
         this.game.load.image('predefined-tiles', 'bin/assets/predefined.png');
 
@@ -23,9 +25,16 @@ export class Preloader extends Phaser.State {
         this.game.load.image('blood-cell', 'bin/assets/blood-cell.png');
         this.game.load.image('magic-glow-particle', 'bin/assets/magic-glow-particle.png');
 
+        this.game.load.image('next-level-window', 'bin/assets/next-level-window.png');
+        this.game.load.image('mask', 'bin/assets/mask.png');
+
         this.game.load.tilemap('level-01', 'bin/assets/level01.csv');
         this.game.load.tilemap('level-02', 'bin/assets/level02.csv');
         this.game.load.tilemap('level-03', 'bin/assets/level03.csv');
+
+        this.game.load.audio('select-tile', 'bin/assets/select-tile.ogg');
+
+        this.game.load.spritesheet('button', 'bin/assets/next-level-button.png', 193, 71);
     }
 
     create() {
@@ -33,12 +42,15 @@ export class Preloader extends Phaser.State {
             alpha: 0
         }, 1000, Phaser.Easing.Linear.None, true);
 
+        this.preloaderBar.anchor.set(0.5, 0.5);
+        this.preloaderBar.position.set(this.world.centerX, this.world.centerY);
+
         tween.onComplete.add(this.startSplash, this);
 
         this.game.input.gamepad.start();
     }
 
     startSplash() {
-        this.game.state.start('Gameplay', true, false);
+        this.game.state.start('Splash', true, false);
     }
 }

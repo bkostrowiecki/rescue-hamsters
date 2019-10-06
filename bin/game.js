@@ -50,6 +50,7 @@ define("states/preloader", ["require", "exports"], function (require, exports) {
         Preloader.prototype.preload = function () {
             this.preloaderBar = this.add.sprite(200, 550, 'preload-bar');
             this.load.setPreloadSprite(this.preloaderBar);
+            this.game.load.image('hamster-big', 'bin/assets/hamster-big.png');
             this.game.load.image('tiles', 'bin/assets/grid.png');
             this.game.load.image('predefined-tiles', 'bin/assets/predefined.png');
             this.game.load.spritesheet('tiles-sheet', 'bin/assets/grid.png', 32, 32);
@@ -60,26 +61,73 @@ define("states/preloader", ["require", "exports"], function (require, exports) {
             this.game.load.image('frame', 'bin/assets/frame.png');
             this.game.load.image('blood-cell', 'bin/assets/blood-cell.png');
             this.game.load.image('magic-glow-particle', 'bin/assets/magic-glow-particle.png');
+            this.game.load.image('next-level-window', 'bin/assets/next-level-window.png');
+            this.game.load.image('mask', 'bin/assets/mask.png');
             this.game.load.tilemap('level-01', 'bin/assets/level01.csv');
             this.game.load.tilemap('level-02', 'bin/assets/level02.csv');
             this.game.load.tilemap('level-03', 'bin/assets/level03.csv');
+            this.game.load.audio('select-tile', 'bin/assets/select-tile.ogg');
+            this.game.load.spritesheet('button', 'bin/assets/next-level-button.png', 193, 71);
         };
         Preloader.prototype.create = function () {
             var tween = this.add.tween(this.preloaderBar).to({
                 alpha: 0
             }, 1000, Phaser.Easing.Linear.None, true);
+            this.preloaderBar.anchor.set(0.5, 0.5);
+            this.preloaderBar.position.set(this.world.centerX, this.world.centerY);
             tween.onComplete.add(this.startSplash, this);
             this.game.input.gamepad.start();
         };
         Preloader.prototype.startSplash = function () {
-            this.game.state.start('Gameplay', true, false);
+            this.game.state.start('Splash', true, false);
         };
         return Preloader;
     }(Phaser.State));
     exports.Preloader = Preloader;
 });
+define("entities/wobblingText", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var WobblingText = /** @class */ (function (_super) {
+        __extends(WobblingText, _super);
+        function WobblingText(game, x, y, text, style, time) {
+            var _this = _super.call(this, game, x, y, text, style) || this;
+            _this.game.add.existing(_this);
+            _this.rotation = -0.05;
+            _this.game.add.tween(_this.scale).to({
+                x: 1.05,
+                y: 1.05
+            }, time || 2000, Phaser.Easing.Linear.None, true, 0, -1, true);
+            _this.game.add.tween(_this).to({
+                rotation: 0.05
+            }, time || 2000, Phaser.Easing.Linear.None, true, 0, -1, true);
+            return _this;
+        }
+        return WobblingText;
+    }(Phaser.Text));
+    exports.WobblingText = WobblingText;
+});
+define("entities/cursor", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var CursorEntity = /** @class */ (function (_super) {
+        __extends(CursorEntity, _super);
+        function CursorEntity(game) {
+            var _this = _super.call(this, game, game.world.centerX, game.world.centerY, 'cursor', 0) || this;
+            _this.game.add.existing(_this);
+            _this.z = 99999;
+            return _this;
+        }
+        CursorEntity.prototype.update = function () {
+            this.x = this.game.input.mousePointer.x - 8;
+            this.y = this.game.input.mousePointer.y;
+        };
+        return CursorEntity;
+    }(Phaser.Sprite));
+    exports.CursorEntity = CursorEntity;
+});
 /// <reference path="../../node_modules/phaser/typescript/phaser.d.ts" />
-define("states/splash", ["require", "exports"], function (require, exports) {
+define("states/splash", ["require", "exports", "entities/wobblingText", "entities/cursor"], function (require, exports, wobblingText_1, cursor_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Splash = /** @class */ (function (_super) {
@@ -91,12 +139,43 @@ define("states/splash", ["require", "exports"], function (require, exports) {
             this.game.stage.backgroundColor = 0xB20059;
         };
         Splash.prototype.create = function () {
-            var logo = this.game.add.sprite(this.game.world.centerX, this.game.world.centerY, 'logo');
-            logo.anchor.setTo(0.5, 0.5);
             this.game.input.onTap.add(this.onTap, this);
+            this.background = this.game.add.image(this.game.world.centerX, this.game.world.centerY, 'background');
+            this.background.anchor.set(0.5);
+            this.background.scale.set(1.1);
+            this.title = new wobblingText_1.WobblingText(this.game, this.game.world.centerX, this.game.world.centerY - 200, 'Hamster rescue!', this.getFontStyles('120px'));
+            this.title.anchor.set(0.5);
+            this.bigHamster = this.game.add.image(this.world.centerX, this.world.centerY, 'hamster-big');
+            this.bigHamster.anchor.set(0.5, 0.5);
+            this.bigHamster.rotation = 0.05;
+            this.game.add.tween(this.bigHamster.scale).to({
+                x: 1.05,
+                y: 1.05
+            }, 3000, Phaser.Easing.Linear.None, true, 0, -1, true);
+            this.game.add.tween(this.bigHamster).to({
+                rotation: -0.05
+            }, 2000, Phaser.Easing.Linear.None, true, 0, -1, true);
+            this.clickToPlay = new wobblingText_1.WobblingText(this.game, this.game.world.centerX, this.game.world.centerY + 200, 'Click here to play!', this.getFontStyles('60px'), 1000);
+            this.clickToPlay.anchor.set(0.5);
+            this.cursor = new cursor_1.CursorEntity(this.game);
         };
         Splash.prototype.onTap = function () {
             this.game.state.start('Gameplay', true, false);
+        };
+        Splash.prototype.getFontStyles = function (fontSize) {
+            return {
+                stroke: '#000',
+                strokeThickness: 12,
+                fill: '#fff',
+                font: fontSize + " Comic Sans MS, Impact"
+            };
+        };
+        Splash.prototype.destroy = function () {
+            this.cursor.destroy();
+            this.clickToPlay.destroy();
+            this.title.destroy();
+            this.background.destroy();
+            this.bigHamster.destroy();
         };
         return Splash;
     }(Phaser.State));
@@ -105,13 +184,21 @@ define("states/splash", ["require", "exports"], function (require, exports) {
 define("helpers/tiles", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var Tiles;
-    (function (Tiles) {
-        Tiles[Tiles["NONE"] = -1] = "NONE";
-        Tiles[Tiles["TOP_GROUND"] = 0] = "TOP_GROUND";
-        Tiles[Tiles["MIDDLE_GROUND"] = 1] = "MIDDLE_GROUND";
-        Tiles[Tiles["SPRING"] = 2] = "SPRING";
-    })(Tiles = exports.Tiles || (exports.Tiles = {}));
+    var PlayerTiles;
+    (function (PlayerTiles) {
+        PlayerTiles[PlayerTiles["NONE"] = -1] = "NONE";
+        PlayerTiles[PlayerTiles["TOP_GROUND"] = 0] = "TOP_GROUND";
+        PlayerTiles[PlayerTiles["MIDDLE_GROUND"] = 1] = "MIDDLE_GROUND";
+        PlayerTiles[PlayerTiles["SPRING"] = 2] = "SPRING";
+    })(PlayerTiles = exports.PlayerTiles || (exports.PlayerTiles = {}));
+    var PredefinedTiles;
+    (function (PredefinedTiles) {
+        PredefinedTiles[PredefinedTiles["NONE"] = -1] = "NONE";
+        PredefinedTiles[PredefinedTiles["START_POINT"] = 0] = "START_POINT";
+        PredefinedTiles[PredefinedTiles["FINISH_POINT"] = 1] = "FINISH_POINT";
+        PredefinedTiles[PredefinedTiles["IVY_MIDDLE"] = 2] = "IVY_MIDDLE";
+        PredefinedTiles[PredefinedTiles["IVY_BOTTOM"] = 3] = "IVY_BOTTOM";
+    })(PredefinedTiles = exports.PredefinedTiles || (exports.PredefinedTiles = {}));
 });
 define("entities/hamster", ["require", "exports"], function (require, exports) {
     "use strict";
@@ -151,25 +238,6 @@ define("entities/hamster", ["require", "exports"], function (require, exports) {
         return HamsterEntity;
     }(Phaser.Sprite));
     exports.HamsterEntity = HamsterEntity;
-});
-define("entities/cursor", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var CursorEntity = /** @class */ (function (_super) {
-        __extends(CursorEntity, _super);
-        function CursorEntity(game) {
-            var _this = _super.call(this, game, game.world.centerX, game.world.centerY, 'cursor', 0) || this;
-            _this.game.add.existing(_this);
-            _this.z = 99999;
-            return _this;
-        }
-        CursorEntity.prototype.update = function () {
-            this.x = this.game.input.mousePointer.x - 8;
-            this.y = this.game.input.mousePointer.y;
-        };
-        return CursorEntity;
-    }(Phaser.Sprite));
-    exports.CursorEntity = CursorEntity;
 });
 define("entities/bloodBurst", ["require", "exports"], function (require, exports) {
     "use strict";
@@ -213,8 +281,91 @@ define("entities/magicGlow", ["require", "exports"], function (require, exports)
     }(Phaser.Particles.Arcade.Emitter));
     exports.MagicGlowEntity = MagicGlowEntity;
 });
+define("entities/nextLevelWindows", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var NextLevelWindow = /** @class */ (function (_super) {
+        __extends(NextLevelWindow, _super);
+        function NextLevelWindow(game, saved, deaths) {
+            var _this = _super.call(this, game) || this;
+            _this.game.add.group(_this);
+            _this.screenMask = _this.game.add.image(0, 0, 'mask');
+            _this.screenMask.scale.set(_this.game.canvas.width, _this.game.canvas.height);
+            _this.add(_this.screenMask);
+            _this.finishLevelWindow = _this.game.add.sprite(_this.game.canvas.width / 2, _this.game.canvas.height / 2, 'next-level-window');
+            _this.finishLevelWindow.anchor.set(0.5, 0.5);
+            _this.add(_this.finishLevelWindow);
+            _this.savedText = _this.game.add.text(_this.game.canvas.width / 2, _this.game.canvas.height / 2 - 60, 'Saved:  ' + saved, _this.getFontStyles());
+            _this.savedText.anchor.set(0.5, 0.5);
+            _this.add(_this.savedText);
+            _this.deathsText = _this.game.add.text(_this.game.canvas.width / 2, _this.game.canvas.height / 2, 'Deaths:  ' + deaths, _this.getFontStyles());
+            _this.deathsText.anchor.set(0.5, 0.5);
+            _this.add(_this.deathsText);
+            _this.nextLevelButton = game.add.button(_this.game.canvas.width / 2, _this.game.canvas.height / 2 + 60, 'button', function () {
+                _this.onNextLevelClick();
+            }, _this, 2, 1, 0);
+            _this.nextLevelButton.input.useHandCursor = false;
+            _this.nextLevelButton.anchor.set(0.5, 0.5);
+            _this.add(_this.nextLevelButton);
+            return _this;
+        }
+        NextLevelWindow.prototype.getFontStyles = function () {
+            return {
+                stroke: '#000',
+                strokeThickness: 12,
+                fill: '#fff',
+                font: '32px Comic Sans MS, Impact'
+            };
+        };
+        return NextLevelWindow;
+    }(Phaser.Group));
+    exports.NextLevelWindow = NextLevelWindow;
+});
+define("entities/nextLevelCounter", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var NextLevelCounter = /** @class */ (function (_super) {
+        __extends(NextLevelCounter, _super);
+        function NextLevelCounter(game, initialTimeInSeconds) {
+            var _this = _super.call(this, game) || this;
+            _this.counter = initialTimeInSeconds;
+            _this.game.add.existing(_this);
+            _this.counterText = _this.game.add.text(_this.game.world.width / 2, _this.game.world.height / 2, initialTimeInSeconds.toString(), _this.getFontStyles());
+            _this.counterText.anchor.set(0.5, 0.5);
+            _this.add(_this.counterText);
+            _this.game.add.tween(_this.counterText).to({
+                y: '+25'
+            }, 500, Phaser.Easing.Exponential.InOut, true, 0, -1, true);
+            _this.game.add.tween(_this.counterText.scale).to({
+                x: 1.2,
+                y: 1.2
+            }, 500, Phaser.Easing.Elastic.InOut, true, 0, -1, true);
+            _this.counterTimer = _this.game.time.events.loop(Phaser.Timer.SECOND, function () {
+                _this.counter--;
+                _this.counterText.setText(_this.counter.toString());
+                if (_this.counter === 0) {
+                    _this.counterText.setText('Go!');
+                }
+                else if (_this.counter === -1) {
+                    _this.onCounterFinish();
+                }
+            }, _this);
+            return _this;
+        }
+        NextLevelCounter.prototype.getFontStyles = function () {
+            return {
+                stroke: '#000',
+                strokeThickness: 12,
+                fill: '#fff',
+                font: '120px Comic Sans MS, Impact'
+            };
+        };
+        return NextLevelCounter;
+    }(Phaser.Group));
+    exports.NextLevelCounter = NextLevelCounter;
+});
 /// <reference path="../../node_modules/phaser/typescript/phaser.d.ts" />
-define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hamster", "entities/cursor", "entities/bloodBurst", "entities/magicGlow"], function (require, exports, tiles_1, hamster_1, cursor_1, bloodBurst_1, magicGlow_1) {
+define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hamster", "entities/cursor", "entities/bloodBurst", "entities/magicGlow", "entities/nextLevelWindows", "entities/nextLevelCounter", "entities/wobblingText"], function (require, exports, tiles_1, hamster_1, cursor_2, bloodBurst_1, magicGlow_1, nextLevelWindows_1, nextLevelCounter_1, wobblingText_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var PlayerTileType;
@@ -236,6 +387,11 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                 'level-02',
                 'level-03'
             ];
+            _this.requiredSavesForNextLevel = [
+                1,
+                3,
+                3
+            ];
             _this.currentLevelIndex = 0;
             return _this;
         }
@@ -245,10 +401,10 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             for (var iy = 0; iy < this.MAP_WIDTH; iy++) {
                 for (var jx = 0; jx < this.MAP_HEIGHT; jx++) {
                     if (iy > 15) {
-                        data += tiles_1.Tiles.NONE;
+                        data += tiles_1.PlayerTiles.NONE;
                     }
                     else {
-                        data += tiles_1.Tiles.NONE;
+                        data += tiles_1.PlayerTiles.NONE;
                     }
                     if (jx < this.MAP_WIDTH) {
                         data += ',';
@@ -271,20 +427,35 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             this.setupPlayerMap();
             this.setupPhysics();
             this.setupDeathSpace();
-            this.hamster = new hamster_1.HamsterEntity(this.game);
-            this.cursor = new cursor_1.CursorEntity(this.game);
-            this.placeHamsterOnStart();
-            this.setupTexts();
+            this.nextLevelCounter = new nextLevelCounter_1.NextLevelCounter(this.game, 3);
+            this.nextLevelCounter.onCounterFinish = function () {
+                _this.nextLevelCounter.destroy();
+                _this.cursor = new cursor_2.CursorEntity(_this.game);
+                _this.placeHamsterOnStart();
+                _this.setupTexts();
+            };
             var nextLevelHotKey = this.game.input.keyboard.addKey(Phaser.Keyboard.P);
             nextLevelHotKey.onDown.add(function () {
                 _this.setupNextLevel();
                 _this.placeHamsterOnStart();
             }, this);
+            this.selectTileSound = this.game.add.audio('select-tile');
         };
         Gameplay.prototype.setupTexts = function () {
+            if (this.deathCounterText) {
+                this.deathCounterText.destroy();
+            }
+            if (this.savedCounterText) {
+                this.savedCounterText.destroy();
+            }
             this.deathCounterText = this.game.add.text(0, 0, '', this.getFontStyles());
+            this.savedCounterText = new wobblingText_2.WobblingText(this.game, this.game.world.centerX, this.TILE_SIZE, '', this.getFontStyles());
+            this.savedCounterText.anchor.set(0.5, 0.5);
         };
         Gameplay.prototype.placeHamsterOnStart = function () {
+            if (!this.hamster) {
+                this.hamster = new hamster_1.HamsterEntity(this.game);
+            }
             this.hamster.body.velocity.y = 0;
             this.hamster.position.set(this.startPoint.x, this.startPoint.y);
         };
@@ -300,14 +471,17 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             this.playerMap.addTilesetImage('tiles', 'tiles', this.TILE_SIZE, this.TILE_SIZE);
             this.playerMapLayer = this.playerMap.createLayer(0);
             this.playerMap.setCollisionBetween(0, 2);
-            this.playerMap.setTileIndexCallback(2, function (sprite, tile) {
+            this.playerMap.setTileIndexCallback(tiles_1.PlayerTiles.SPRING, function (sprite, tile) {
                 if (sprite instanceof hamster_1.HamsterEntity) {
                     var hammsterBody = sprite.body;
                     hammsterBody.velocity.set(hammsterBody.velocity.x, -600);
                 }
             }, this);
+            this.activateTilesBasedOnAvalability();
         };
         Gameplay.prototype.setupNextLevel = function () {
+            var _this = this;
+            this.hamster.destroy();
             this.predefinedMapLayer.destroy();
             this.predefinedMap.destroy();
             this.playerMapLayer.destroy();
@@ -315,8 +489,14 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             this.setupPredefinedMap(this.levels[++this.currentLevelIndex]);
             this.setupPlayerMap();
             this.activateTilesBasedOnAvalability();
-            this.hamster.destroy();
-            this.hamster = new hamster_1.HamsterEntity(this.game);
+            this.setupTexts();
+            this.nextLevelCounter = new nextLevelCounter_1.NextLevelCounter(this.game, 3);
+            this.nextLevelCounter.onCounterFinish = function () {
+                _this.setupTexts();
+                _this.nextLevelCounter.destroy();
+                _this.hamster = new hamster_1.HamsterEntity(_this.game);
+                _this.placeHamsterOnStart();
+            };
         };
         Gameplay.prototype.getFontStyles = function () {
             return {
@@ -342,11 +522,21 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                 this.finishMagicGlow.destroy();
             }
             this.finishMagicGlow = new magicGlow_1.MagicGlowEntity(this.game, findFinishLocation.x + glowShift, findFinishLocation.y + glowShift);
-            this.predefinedMap.setTileIndexCallback(1, function () {
-                _this.setupNextLevel();
-                _this.placeHamsterOnStart();
+            this.predefinedMap.setTileIndexCallback(tiles_1.PredefinedTiles.FINISH_POINT, function () {
+                _this.savedCounter++;
+                if (_this.savedCounter === _this.requiredSavesForNextLevel[_this.currentLevelIndex]) {
+                    _this.hamster.kill();
+                    _this.finishLevel();
+                    // this.savedCounter = 0;
+                    // this.setupNextLevel();
+                    // this.hamster.position.set(-2000, -2000);
+                    // this.killHamster();
+                }
+                else {
+                    _this.placeHamsterOnStart();
+                }
             }, this);
-            this.predefinedMap.setTileIndexCallback(2, function () {
+            this.predefinedMap.setTileIndexCallback(tiles_1.PredefinedTiles.IVY_MIDDLE, function () {
                 _this.killHamster();
             }, this);
         };
@@ -368,13 +558,12 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                     return new Phaser.Point(myTile.worldX, myTile.worldY);
                 }
             }
+            this.currentTile = PlayerTileType.GROUND;
             throw new Error('Cannot find a finish point for this map');
         };
         Gameplay.prototype.setupUi = function () {
             var frame = this.game.add.image(this.game.world.width, 0, 'frame');
             frame.anchor.set(1, 0);
-            this.currentTile = PlayerTileType.GROUND;
-            this.activateTilesBasedOnAvalability();
         };
         Gameplay.prototype.activateTilesBasedOnAvalability = function () {
             var currentLevel = this.levels[this.currentLevelIndex];
@@ -384,14 +573,29 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             if (currentLevel === 'level-02') {
                 this.activateSpringTile();
             }
+            this.setupCursor();
+        };
+        Gameplay.prototype.setupCursor = function () {
             if (this.cursor) {
                 this.cursor.destroy();
             }
-            this.cursor = new cursor_1.CursorEntity(this.game);
+            this.cursor = new cursor_2.CursorEntity(this.game);
+        };
+        Gameplay.prototype.finishLevel = function () {
+            var _this = this;
+            this.nextLevelWindow = new nextLevelWindows_1.NextLevelWindow(this.game, this.savedCounter, this.deathCounter);
+            this.nextLevelWindow.onNextLevelClick = function () {
+                _this.nextLevelWindow.destroy();
+                _this.savedCounter = 0;
+                _this.setupNextLevel();
+                _this.hamster.position.set(-2000, -2000);
+                _this.killHamster();
+            };
+            this.setupCursor();
         };
         Gameplay.prototype.setupDeathSpace = function () {
-            this.deathSpace = this.game.add.sprite(0, this.world.height + this.TILE_SIZE);
-            this.deathSpace.width = this.world.width - this.TILE_SIZE * 2;
+            this.deathSpace = this.game.add.sprite(-this.TILE_SIZE * 2, this.world.height + this.TILE_SIZE);
+            this.deathSpace.width = this.world.width + this.TILE_SIZE * 4;
             this.deathSpace.height = this.TILE_SIZE;
             this.game.physics.arcade.enable([this.deathSpace]);
             var body = this.deathSpace.body;
@@ -409,6 +613,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             this.groundButton.anchor.set(1, 0);
             this.groundButton.events.onInputDown.add(function () {
                 _this.currentTile = PlayerTileType.GROUND;
+                _this.selectTileSound.play();
             }, this);
         };
         Gameplay.prototype.activateSpringTile = function () {
@@ -422,6 +627,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             this.springButton.frame = 2;
             this.springButton.events.onInputDown.add(function () {
                 _this.currentTile = PlayerTileType.SPRING;
+                _this.selectTileSound.play();
             }, this);
             this.springButton.z = -1;
         };
@@ -434,8 +640,6 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                 blood.destroy();
             }, this);
             this.deathCounter++;
-        };
-        Gameplay.prototype.placeMagicGlows = function () {
         };
         Gameplay.prototype.update = function () {
             var _this = this;
@@ -452,7 +656,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                     return;
                 }
                 if (this.game.input.keyboard.isDown(Phaser.Keyboard.SHIFT)) {
-                    this.playerMap.putTileWorldXY(tiles_1.Tiles.NONE, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.playerMapLayer);
+                    this.playerMap.putTileWorldXY(tiles_1.PlayerTiles.NONE, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.playerMapLayer);
                     return;
                 }
                 if (this.currentTile === PlayerTileType.GROUND) {
@@ -464,19 +668,19 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             }
         };
         Gameplay.prototype.updatePlayerTileGround = function () {
-            var tileTypeToPlace = tiles_1.Tiles.NONE;
+            var tileTypeToPlace = tiles_1.PlayerTiles.NONE;
             var tileAbove = this.playerMap.getTileWorldXY(this.game.input.mousePointer.x, this.game.input.mousePointer.y - this.TILE_SIZE, this.TILE_SIZE, this.TILE_SIZE);
             if (!!tileAbove &&
-                (tileAbove.index === tiles_1.Tiles.TOP_GROUND ||
-                    tileAbove.index === tiles_1.Tiles.MIDDLE_GROUND)) {
-                tileTypeToPlace = tiles_1.Tiles.MIDDLE_GROUND;
+                (tileAbove.index === tiles_1.PlayerTiles.TOP_GROUND ||
+                    tileAbove.index === tiles_1.PlayerTiles.MIDDLE_GROUND)) {
+                tileTypeToPlace = tiles_1.PlayerTiles.MIDDLE_GROUND;
             }
             else {
-                tileTypeToPlace = tiles_1.Tiles.TOP_GROUND;
+                tileTypeToPlace = tiles_1.PlayerTiles.TOP_GROUND;
             }
             var tileBelow = this.playerMap.getTileWorldXY(this.game.input.mousePointer.x, this.game.input.mousePointer.y + this.TILE_SIZE);
-            if (!!tileBelow && tileBelow.index === tiles_1.Tiles.TOP_GROUND) {
-                this.playerMap.putTileWorldXY(tiles_1.Tiles.MIDDLE_GROUND, tileBelow.worldX, tileBelow.worldY, this.TILE_SIZE, this.TILE_SIZE);
+            if (!!tileBelow && tileBelow.index === tiles_1.PlayerTiles.TOP_GROUND) {
+                this.playerMap.putTileWorldXY(tiles_1.PlayerTiles.MIDDLE_GROUND, tileBelow.worldX, tileBelow.worldY, this.TILE_SIZE, this.TILE_SIZE);
             }
             this.playerMap.putTileWorldXY(tileTypeToPlace, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.playerMapLayer);
         };
@@ -485,13 +689,16 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             return !tile;
         };
         Gameplay.prototype.updatePlayerTileSpring = function () {
-            var tileTypeToPlace = tiles_1.Tiles.SPRING;
+            var tileTypeToPlace = tiles_1.PlayerTiles.SPRING;
             this.playerMap.putTileWorldXY(tileTypeToPlace, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.playerMapLayer);
         };
         Gameplay.prototype.render = function () {
             // this.game.debug.bodyInfo(this.hamster, 0, 0);
             // this.game.debug.body(this.hamster);
-            this.deathCounterText.text = 'Dead hamsters: ' + this.deathCounter.toString();
+            // this.deathCounterText.text = 'Dead hamsters: ' + this.deathCounter.toString();
+            if (this.savedCounterText) {
+                this.savedCounterText.text = 'Saved ' + this.savedCounter.toString() + '/' + this.requiredSavesForNextLevel[this.currentLevelIndex];
+            }
         };
         return Gameplay;
     }(Phaser.State));
