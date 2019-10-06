@@ -3,6 +3,8 @@ export class CursorEntity extends Phaser.Sprite {
         super(game, game.world.centerX, game.world.centerY, 'cursor', 0);
 
         this.game.add.existing(this);
+
+        this.z = 99999;
     }
 
     update() {

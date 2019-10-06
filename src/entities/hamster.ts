@@ -26,12 +26,6 @@ export class HamsterEntity extends Phaser.Sprite {
 
         this.walk = this.animations.add('walk');
         this.animations.play('walk', 30, true);
-
-        this.restartButton = this.game.input.keyboard.addKey(Phaser.Keyboard.R);
-        this.restartButton.onDown.add(() => {
-            this.position.set(this.game.world.centerX, 32);
-            this.body.velocity.y = 0;
-        }, this);
     }
 
     update() {

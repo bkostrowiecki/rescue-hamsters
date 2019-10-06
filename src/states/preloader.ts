@@ -21,6 +21,7 @@ export class Preloader extends Phaser.State {
         this.game.load.image('frame', 'bin/assets/frame.png');
 
         this.game.load.tilemap('level-01', 'bin/assets/level01.csv');
+        this.game.load.tilemap('level-02', 'bin/assets/level02.csv');
     }
 
     create() {

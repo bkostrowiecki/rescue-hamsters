@@ -59,6 +59,7 @@ define("states/preloader", ["require", "exports"], function (require, exports) {
             this.game.load.image('background', 'bin/assets/background.png');
             this.game.load.image('frame', 'bin/assets/frame.png');
             this.game.load.tilemap('level-01', 'bin/assets/level01.csv');
+            this.game.load.tilemap('level-02', 'bin/assets/level02.csv');
         };
         Preloader.prototype.create = function () {
             var tween = this.add.tween(this.preloaderBar).to({
@@ -128,11 +129,6 @@ define("entities/hamster", ["require", "exports"], function (require, exports) {
             body.bounce.x = 1;
             _this.walk = _this.animations.add('walk');
             _this.animations.play('walk', 30, true);
-            _this.restartButton = _this.game.input.keyboard.addKey(Phaser.Keyboard.R);
-            _this.restartButton.onDown.add(function () {
-                _this.position.set(_this.game.world.centerX, 32);
-                _this.body.velocity.y = 0;
-            }, _this);
             return _this;
         }
         HamsterEntity.prototype.update = function () {
@@ -161,6 +157,7 @@ define("entities/cursor", ["require", "exports"], function (require, exports) {
         function CursorEntity(game) {
             var _this = _super.call(this, game, game.world.centerX, game.world.centerY, 'cursor', 0) || this;
             _this.game.add.existing(_this);
+            _this.z = 99999;
             return _this;
         }
         CursorEntity.prototype.update = function () {
@@ -189,6 +186,11 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             _this.TILE_SIZE = 32;
             _this.deathCounter = 0;
             _this.savedCounter = 0;
+            _this.levels = [
+                'level-01',
+                'level-02'
+            ];
+            _this.currentLevelIndex = 0;
             return _this;
         }
         Gameplay.prototype.preload = function () { };
@@ -218,11 +220,16 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             background.anchor.set(0.5);
             background.scale.set(1.2);
             this.setupUi();
-            this.setupPredefinedMap();
+            this.setupPredefinedMap(this.levels[this.currentLevelIndex]);
             this.setupPlayerMap();
             this.setupPhysics();
+            this.setupDeathSpace();
             this.hamster = new hamster_1.HamsterEntity(this.game);
             this.cursor = new cursor_1.CursorEntity(this.game);
+            this.placeHamsterOnStart();
+        };
+        Gameplay.prototype.placeHamsterOnStart = function () {
+            this.hamster.body.velocity.y = 0;
             this.hamster.position.set(this.startPoint.x, this.startPoint.y);
         };
         Gameplay.prototype.setupPhysics = function () {
@@ -244,13 +251,26 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                 }
             }, this);
         };
-        Gameplay.prototype.setupPredefinedMap = function () {
-            this.predefinedMap = this.game.add.tilemap('level-01', 32, 32);
+        Gameplay.prototype.setupNextLevel = function () {
+            this.predefinedMapLayer.destroy();
+            this.predefinedMap.destroy();
+            this.playerMapLayer.destroy();
+            this.playerMap.destroy();
+            this.setupPredefinedMap(this.levels[++this.currentLevelIndex]);
+            this.setupPlayerMap();
+            this.activateTilesBasedOnAvalability();
+            this.hamster.destroy();
+            this.hamster = new hamster_1.HamsterEntity(this.game);
+        };
+        Gameplay.prototype.setupPredefinedMap = function (level) {
+            var _this = this;
+            this.predefinedMap = this.game.add.tilemap(level, 32, 32);
             this.predefinedMap.addTilesetImage('predefined-tiles');
             this.predefinedMapLayer = this.predefinedMap.createLayer(0);
             this.startPoint = this.findStartLocation();
             this.predefinedMap.setTileIndexCallback(1, function () {
-                console.log('won!');
+                _this.setupNextLevel();
+                _this.placeHamsterOnStart();
             }, this);
         };
         Gameplay.prototype.findStartLocation = function () {
@@ -267,7 +287,29 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             var frame = this.game.add.image(this.game.world.width, 0, 'frame');
             frame.anchor.set(1, 0);
             this.currentTile = PlayerTileType.GROUND;
-            this.activateGroundTile();
+            this.activateTilesBasedOnAvalability();
+        };
+        Gameplay.prototype.activateTilesBasedOnAvalability = function () {
+            var currentLevel = this.levels[this.currentLevelIndex];
+            if (currentLevel === 'level-01') {
+                this.activateGroundTile();
+            }
+            if (currentLevel === 'level-02') {
+                this.activateSpringTile();
+            }
+            if (this.cursor) {
+                this.cursor.destroy();
+            }
+            this.cursor = new cursor_1.CursorEntity(this.game);
+        };
+        Gameplay.prototype.setupDeathSpace = function () {
+            this.deathSpace = this.game.add.sprite(0, this.world.height + this.TILE_SIZE);
+            this.deathSpace.width = this.world.width - this.TILE_SIZE * 2;
+            this.deathSpace.height = this.TILE_SIZE;
+            this.game.physics.arcade.enable([this.deathSpace]);
+            var body = this.deathSpace.body;
+            body.allowGravity = false;
+            body.immovable = true;
         };
         Gameplay.prototype.activateGroundTile = function () {
             var _this = this;
@@ -288,17 +330,24 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             this.springKey.onDown.add(function () {
                 _this.currentTile = PlayerTileType.SPRING;
             }, this);
-            this.springButton = this.game.add.sprite(this.game.world.width - this.TILE_SIZE / 2, this.TILE_SIZE / 2 + 64, 'tiles-sheet');
+            this.springButton = this.game.add.sprite(this.game.world.width + this.TILE_SIZE / 2, this.TILE_SIZE / 2 + 64, 'tiles-sheet');
             this.springButton.inputEnabled = true;
             this.springButton.frame = 2;
-            this.springButton.anchor.set(1, 0);
             this.springButton.events.onInputDown.add(function () {
                 _this.currentTile = PlayerTileType.SPRING;
             }, this);
+            this.springButton.z = -1;
         };
         Gameplay.prototype.update = function () {
+            var _this = this;
             this.game.physics.arcade.collide(this.hamster, this.playerMapLayer);
             this.game.physics.arcade.collide(this.hamster, this.predefinedMapLayer);
+            this.game.physics.arcade.overlap(this.hamster, this.deathSpace, function () {
+                _this.hamster.kill();
+                _this.placeHamsterOnStart();
+                _this.hamster.revive(100);
+                _this.deathCounter++;
+            });
             if (this.game.input.mousePointer.isDown) {
                 if (this.game.input.mousePointer.x > this.TILE_SIZE * 30) {
                     return;
@@ -346,6 +395,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
         Gameplay.prototype.render = function () {
             // this.game.debug.bodyInfo(this.hamster, 0, 0);
             // this.game.debug.body(this.hamster);
+            this.game.debug.body(this.deathSpace);
         };
         return Gameplay;
     }(Phaser.State));

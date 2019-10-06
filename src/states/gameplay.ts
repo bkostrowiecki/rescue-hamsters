@@ -33,8 +33,17 @@ export class Gameplay extends Phaser.State {
 
     private startPoint: Phaser.Point;
 
+    private deathSpace: Phaser.Sprite;
+
     private deathCounter = 0;
     private savedCounter = 0;
+
+    private levels = [
+        'level-01',
+        'level-02'
+    ];
+
+    private currentLevelIndex = 0;
 
     preload() {}
 
@@ -80,14 +89,21 @@ export class Gameplay extends Phaser.State {
 
         this.setupUi();
 
-        this.setupPredefinedMap();
+        this.setupPredefinedMap(this.levels[this.currentLevelIndex]);
         this.setupPlayerMap();
 
         this.setupPhysics();
 
+        this.setupDeathSpace();
+
         this.hamster = new HamsterEntity(this.game);
         this.cursor = new CursorEntity(this.game);
 
+        this.placeHamsterOnStart();
+    }
+
+    private placeHamsterOnStart() {
+        this.hamster.body.velocity.y = 0;
         this.hamster.position.set(this.startPoint.x, this.startPoint.y);
     }
 
@@ -135,8 +151,24 @@ export class Gameplay extends Phaser.State {
         );
     }
 
-    private setupPredefinedMap() {
-        this.predefinedMap = this.game.add.tilemap('level-01', 32, 32);
+    private setupNextLevel() {
+        this.predefinedMapLayer.destroy();
+        this.predefinedMap.destroy();
+
+        this.playerMapLayer.destroy();
+        this.playerMap.destroy();
+
+        this.setupPredefinedMap(this.levels[++this.currentLevelIndex]);
+        this.setupPlayerMap();
+            
+        this.activateTilesBasedOnAvalability();
+
+        this.hamster.destroy();
+        this.hamster = new HamsterEntity(this.game);
+    }
+
+    private setupPredefinedMap(level: string) {
+        this.predefinedMap = this.game.add.tilemap(level, 32, 32);
 
         this.predefinedMap.addTilesetImage('predefined-tiles');
 
@@ -147,7 +179,8 @@ export class Gameplay extends Phaser.State {
         this.predefinedMap.setTileIndexCallback(
             1,
             () => {
-                console.log('won!');
+                this.setupNextLevel();
+                this.placeHamsterOnStart();
             },
             this
         );
@@ -178,7 +211,36 @@ export class Gameplay extends Phaser.State {
 
         this.currentTile = PlayerTileType.GROUND;
 
-        this.activateGroundTile();
+        this.activateTilesBasedOnAvalability();
+    }
+
+    private activateTilesBasedOnAvalability() {
+        const currentLevel = this.levels[this.currentLevelIndex];
+        if (currentLevel === 'level-01') {
+            this.activateGroundTile();
+        }
+
+        if (currentLevel === 'level-02') {
+            this.activateSpringTile();
+        }
+
+        if (this.cursor) {
+            this.cursor.destroy();
+        }
+
+        this.cursor = new CursorEntity(this.game);
+    }
+
+    private setupDeathSpace() {
+        this.deathSpace = this.game.add.sprite(0, this.world.height + this.TILE_SIZE)
+        this.deathSpace.width = this.world.width - this.TILE_SIZE*2;
+        this.deathSpace.height = this.TILE_SIZE;
+
+        this.game.physics.arcade.enable([this.deathSpace]);
+
+        const body = this.deathSpace.body as Phaser.Physics.Arcade.Body;
+        body.allowGravity = false;
+        body.immovable = true;
     }
 
     private activateGroundTile() {
@@ -210,22 +272,34 @@ export class Gameplay extends Phaser.State {
         }, this);
 
         this.springButton = this.game.add.sprite(
-            this.game.world.width - this.TILE_SIZE / 2,
+            this.game.world.width + this.TILE_SIZE / 2,
             this.TILE_SIZE / 2 + 64,
             'tiles-sheet'
         );
         this.springButton.inputEnabled = true;
         this.springButton.frame = 2;
-        this.springButton.anchor.set(1, 0);
+
         this.springButton.events.onInputDown.add(() => {
             this.currentTile = PlayerTileType.SPRING;
         }, this);
+
+        this.springButton.z = -1;
     }
 
     update() {
         this.game.physics.arcade.collide(this.hamster, this.playerMapLayer);
 
         this.game.physics.arcade.collide(this.hamster, this.predefinedMapLayer);
+
+        this.game.physics.arcade.overlap(this.hamster, this.deathSpace, () => {
+            this.hamster.kill();
+
+            this.placeHamsterOnStart();
+
+            this.hamster.revive(100);
+
+            this.deathCounter++;
+        });
 
         if (this.game.input.mousePointer.isDown) {
             if (this.game.input.mousePointer.x > this.TILE_SIZE * 30) {
@@ -326,5 +400,7 @@ export class Gameplay extends Phaser.State {
     render() {
         // this.game.debug.bodyInfo(this.hamster, 0, 0);
         // this.game.debug.body(this.hamster);
+
+        this.game.debug.body(this.deathSpace);
     }
 }
