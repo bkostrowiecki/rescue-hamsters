@@ -227,6 +227,10 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             this.hamster = new hamster_1.HamsterEntity(this.game);
             this.cursor = new cursor_1.CursorEntity(this.game);
             this.placeHamsterOnStart();
+            this.setupTexts();
+        };
+        Gameplay.prototype.setupTexts = function () {
+            this.deathCounterText = this.game.add.text(0, 0, '', this.getFontStyles());
         };
         Gameplay.prototype.placeHamsterOnStart = function () {
             this.hamster.body.velocity.y = 0;
@@ -261,6 +265,14 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             this.activateTilesBasedOnAvalability();
             this.hamster.destroy();
             this.hamster = new hamster_1.HamsterEntity(this.game);
+        };
+        Gameplay.prototype.getFontStyles = function () {
+            return {
+                stroke: '#000',
+                strokeThickness: 12,
+                fill: '#fff',
+                font: '24px Comic Sans MS, Impact'
+            };
         };
         Gameplay.prototype.setupPredefinedMap = function (level) {
             var _this = this;
@@ -395,7 +407,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
         Gameplay.prototype.render = function () {
             // this.game.debug.bodyInfo(this.hamster, 0, 0);
             // this.game.debug.body(this.hamster);
-            this.game.debug.body(this.deathSpace);
+            this.deathCounterText.text = 'Dead hamsters: ' + this.deathCounter.toString();
         };
         return Gameplay;
     }(Phaser.State));

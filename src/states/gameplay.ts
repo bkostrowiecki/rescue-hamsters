@@ -38,6 +38,9 @@ export class Gameplay extends Phaser.State {
     private deathCounter = 0;
     private savedCounter = 0;
 
+    private deathCounterText: Phaser.Text;
+    private savedCounterText: Phaser.Text;
+
     private levels = [
         'level-01',
         'level-02'
@@ -100,6 +103,12 @@ export class Gameplay extends Phaser.State {
         this.cursor = new CursorEntity(this.game);
 
         this.placeHamsterOnStart();
+
+        this.setupTexts();
+    }
+
+    private setupTexts() {
+        this.deathCounterText = this.game.add.text(0, 0, '', this.getFontStyles());
     }
 
     private placeHamsterOnStart() {
@@ -165,6 +174,15 @@ export class Gameplay extends Phaser.State {
 
         this.hamster.destroy();
         this.hamster = new HamsterEntity(this.game);
+    }
+
+    private getFontStyles() {
+        return {
+            stroke: '#000',
+            strokeThickness: 12,
+            fill: '#fff',
+            font: '24px Comic Sans MS, Impact'
+        }
     }
 
     private setupPredefinedMap(level: string) {
@@ -401,6 +419,6 @@ export class Gameplay extends Phaser.State {
         // this.game.debug.bodyInfo(this.hamster, 0, 0);
         // this.game.debug.body(this.hamster);
 
-        this.game.debug.body(this.deathSpace);
+        this.deathCounterText.text = 'Dead hamsters: ' + this.deathCounter.toString();
     }
 }
