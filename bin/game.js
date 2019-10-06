@@ -68,6 +68,9 @@ define("states/preloader", ["require", "exports"], function (require, exports) {
             this.game.load.tilemap('level-01', 'bin/assets/level01.csv');
             this.game.load.tilemap('level-02', 'bin/assets/level02.csv');
             this.game.load.tilemap('level-03', 'bin/assets/level03.csv');
+            this.game.load.tilemap('level-04', 'bin/assets/level04.csv');
+            this.game.load.tilemap('level-05', 'bin/assets/level05.csv');
+            this.game.load.tilemap('level-06', 'bin/assets/level06.csv');
             this.game.load.audio('select-tile', 'bin/assets/select-tile.ogg');
             this.game.load.spritesheet('button', 'bin/assets/button.png', 179, 62);
             this.game.load.audio('music', 'bin/assets/music.ogg');
@@ -418,12 +421,18 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             _this.levels = [
                 'level-01',
                 'level-02',
-                'level-03'
+                'level-03',
+                'level-04',
+                'level-05',
+                'level-06'
             ];
             _this.requiredSavesForNextLevel = [
                 1,
                 3,
-                3
+                3,
+                5,
+                5,
+                10
             ];
             _this.currentLevelIndex = 0;
             return _this;
@@ -516,7 +525,6 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
         };
         Gameplay.prototype.setupNextLevel = function () {
             var _this = this;
-            this.saveHamster();
             this.predefinedMapLayer.destroy();
             this.predefinedMap.destroy();
             this.playerMapLayer.destroy();
@@ -568,9 +576,6 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                 }
                 else {
                     _this.saveHamster();
-                    _this.game.time.events.add(Phaser.Timer.SECOND * 3, function () {
-                        _this.placeHamsterOnStart();
-                    });
                 }
             }, this);
             this.predefinedMap.setTileIndexCallback(tiles_1.PredefinedTiles.IVY_MIDDLE, function () {
@@ -700,7 +705,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             this.hamster.position.set(-200, -200);
             this.hamster.physicsEnabled = false;
             this.hamster.kill();
-            this.game.time.events.add(Phaser.Timer.SECOND * 3, function () {
+            this.game.time.events.add(Phaser.Timer.SECOND * 0.5, function () {
                 _this.placeHamsterOnStart();
             });
         };

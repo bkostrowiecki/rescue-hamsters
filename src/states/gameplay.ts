@@ -56,13 +56,19 @@ export class Gameplay extends Phaser.State {
     private levels = [
         'level-01',
         'level-02',
-        'level-03'
+        'level-03',
+        'level-04',
+        'level-05',
+        'level-06'
     ];
 
     private requiredSavesForNextLevel = [
         1,
         3,
-        3
+        3,
+        5,
+        5,
+        10
     ];
 
     private currentLevelIndex = 0;
@@ -213,8 +219,6 @@ export class Gameplay extends Phaser.State {
     }
 
     private setupNextLevel() {
-        this.saveHamster();
-
         this.predefinedMapLayer.destroy();
         this.predefinedMap.destroy();
 
@@ -288,10 +292,6 @@ export class Gameplay extends Phaser.State {
                     // this.killHamster();
                 } else {
                     this.saveHamster();
-
-                    this.game.time.events.add(Phaser.Timer.SECOND * 3, () => {
-                        this.placeHamsterOnStart();
-                    });
                 }
             },
             this
@@ -482,7 +482,7 @@ export class Gameplay extends Phaser.State {
         this.hamster.physicsEnabled = false;
         this.hamster.kill();
 
-        this.game.time.events.add(Phaser.Timer.SECOND * 3, () => {
+        this.game.time.events.add(Phaser.Timer.SECOND * 0.5, () => {
             this.placeHamsterOnStart();
         });
     }
