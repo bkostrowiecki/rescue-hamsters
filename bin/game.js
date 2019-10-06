@@ -69,7 +69,7 @@ define("states/preloader", ["require", "exports"], function (require, exports) {
             this.game.load.tilemap('level-02', 'bin/assets/level02.csv');
             this.game.load.tilemap('level-03', 'bin/assets/level03.csv');
             this.game.load.audio('select-tile', 'bin/assets/select-tile.ogg');
-            this.game.load.spritesheet('button', 'bin/assets/next-level-button.png', 193, 71);
+            this.game.load.spritesheet('button', 'bin/assets/button.png', 179, 62);
             this.game.load.audio('music', 'bin/assets/music.ogg');
         };
         Preloader.prototype.create = function () {
@@ -304,12 +304,14 @@ define("entities/nextLevelWindows", ["require", "exports"], function (require, e
             _this.deathsText = _this.game.add.text(_this.game.canvas.width / 2, _this.game.canvas.height / 2, 'Deaths:  ' + deaths, _this.getFontStyles());
             _this.deathsText.anchor.set(0.5, 0.5);
             _this.add(_this.deathsText);
-            _this.nextLevelButton = game.add.button(_this.game.canvas.width / 2, _this.game.canvas.height / 2 + 60, 'button', function () {
+            _this.nextLevelButton = game.add.button(_this.game.canvas.width / 2, _this.game.canvas.height / 2 + 80, 'button', function () {
                 _this.onNextLevelClick();
             }, _this, 2, 1, 0);
             _this.nextLevelButton.input.useHandCursor = false;
             _this.nextLevelButton.anchor.set(0.5, 0.5);
             _this.add(_this.nextLevelButton);
+            _this.nextLevelButtonText = game.add.text(_this.game.canvas.width / 2, _this.game.canvas.height / 2 + 80, 'Start next level', _this.getButtonFontStyle(), _this);
+            _this.nextLevelButtonText.anchor.set(0.5, 0.5);
             return _this;
         }
         NextLevelWindow.prototype.getFontStyles = function () {
@@ -318,6 +320,14 @@ define("entities/nextLevelWindows", ["require", "exports"], function (require, e
                 strokeThickness: 12,
                 fill: '#fff',
                 font: '32px Comic Sans MS, Impact'
+            };
+        };
+        NextLevelWindow.prototype.getButtonFontStyle = function () {
+            return {
+                stroke: '#000',
+                strokeThickness: 8,
+                fill: '#fff',
+                font: '18px Comic Sans MS, Impact'
             };
         };
         return NextLevelWindow;
@@ -367,8 +377,28 @@ define("entities/nextLevelCounter", ["require", "exports"], function (require, e
     }(Phaser.Group));
     exports.NextLevelCounter = NextLevelCounter;
 });
+define("entities/disapearingText", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var DisapearingText = /** @class */ (function (_super) {
+        __extends(DisapearingText, _super);
+        function DisapearingText(game, x, y, text, style, time) {
+            var _this = _super.call(this, game, x, y, text, style) || this;
+            _this.game.add.existing(_this);
+            _this.game.add.tween(_this).to({
+                y: '-150',
+            }, time || 3000, Phaser.Easing.Linear.None, true, 0, 1);
+            _this.game.add.tween(_this).to({
+                alpha: 0
+            }, 500, Phaser.Easing.Linear.None, true, time ? time - 500 : 2500);
+            return _this;
+        }
+        return DisapearingText;
+    }(Phaser.Text));
+    exports.DisapearingText = DisapearingText;
+});
 /// <reference path="../../node_modules/phaser/typescript/phaser.d.ts" />
-define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hamster", "entities/cursor", "entities/bloodBurst", "entities/magicGlow", "entities/nextLevelWindows", "entities/nextLevelCounter", "entities/wobblingText"], function (require, exports, tiles_1, hamster_1, cursor_2, bloodBurst_1, magicGlow_1, nextLevelWindows_1, nextLevelCounter_1, wobblingText_2) {
+define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hamster", "entities/cursor", "entities/bloodBurst", "entities/magicGlow", "entities/nextLevelWindows", "entities/nextLevelCounter", "entities/wobblingText", "entities/disapearingText"], function (require, exports, tiles_1, hamster_1, cursor_2, bloodBurst_1, magicGlow_1, nextLevelWindows_1, nextLevelCounter_1, wobblingText_2, disapearingText_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var PlayerTileType;
@@ -459,8 +489,10 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             if (!this.hamster) {
                 this.hamster = new hamster_1.HamsterEntity(this.game);
             }
+            this.hamster.physicsEnabled = true;
             this.hamster.body.velocity.y = 0;
             this.hamster.position.set(this.startPoint.x, this.startPoint.y);
+            this.shouldRevive = true;
         };
         Gameplay.prototype.setupPhysics = function () {
             this.game.physics.startSystem(Phaser.Physics.ARCADE);
@@ -484,7 +516,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
         };
         Gameplay.prototype.setupNextLevel = function () {
             var _this = this;
-            this.hamster.destroy();
+            this.saveHamster();
             this.predefinedMapLayer.destroy();
             this.predefinedMap.destroy();
             this.playerMapLayer.destroy();
@@ -497,7 +529,6 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             this.nextLevelCounter.onCounterFinish = function () {
                 _this.setupTexts();
                 _this.nextLevelCounter.destroy();
-                _this.hamster = new hamster_1.HamsterEntity(_this.game);
                 _this.placeHamsterOnStart();
             };
         };
@@ -528,7 +559,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             this.predefinedMap.setTileIndexCallback(tiles_1.PredefinedTiles.FINISH_POINT, function () {
                 _this.savedCounter++;
                 if (_this.savedCounter === _this.requiredSavesForNextLevel[_this.currentLevelIndex]) {
-                    _this.hamster.kill();
+                    _this.saveLastHamster();
                     _this.finishLevel();
                     // this.savedCounter = 0;
                     // this.setupNextLevel();
@@ -536,7 +567,10 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                     // this.killHamster();
                 }
                 else {
-                    _this.placeHamsterOnStart();
+                    _this.saveHamster();
+                    _this.game.time.events.add(Phaser.Timer.SECOND * 3, function () {
+                        _this.placeHamsterOnStart();
+                    });
                 }
             }, this);
             this.predefinedMap.setTileIndexCallback(tiles_1.PredefinedTiles.IVY_MIDDLE, function () {
@@ -591,8 +625,6 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                 _this.nextLevelWindow.destroy();
                 _this.savedCounter = 0;
                 _this.setupNextLevel();
-                _this.hamster.position.set(-2000, -2000);
-                _this.killHamster();
             };
             this.setupCursor();
         };
@@ -634,22 +666,52 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             }, this);
             this.springButton.z = -1;
         };
-        Gameplay.prototype.killHamster = function () {
-            var blood = new bloodBurst_1.BloodBurstEntity(this.game, this.hamster.position.x + this.hamster.body.velocity.x * 0.15, this.hamster.position.y);
+        Gameplay.prototype.killHamster = function (noBlood) {
+            var _this = this;
+            var blood;
+            if (!noBlood) {
+                blood = new bloodBurst_1.BloodBurstEntity(this.game, this.hamster.position.x + this.hamster.body.velocity.x * 0.15, this.hamster.position.y);
+            }
+            var deathInfo = new disapearingText_1.DisapearingText(this.game, this.hamster.x, this.hamster.y, '+1 Death', this.getFontStyles(), 3000);
+            this.game.time.events.add(Phaser.Timer.SECOND * 4, function () {
+                deathInfo.destroy();
+            });
+            this.hamster.position.set(-200, -200);
+            this.hamster.physicsEnabled = false;
             this.hamster.kill();
-            this.placeHamsterOnStart();
-            this.hamster.revive(100);
             this.game.time.events.add(Phaser.Timer.SECOND * 3, function () {
-                blood.destroy();
+                _this.placeHamsterOnStart();
+            });
+            this.game.time.events.add(Phaser.Timer.SECOND * 3, function () {
+                if (blood) {
+                    blood.destroy();
+                    blood = undefined;
+                }
             }, this);
             this.deathCounter++;
+        };
+        Gameplay.prototype.saveLastHamster = function () {
+            this.hamster.position.set(-200, -200);
+            this.hamster.physicsEnabled = false;
+            this.hamster.kill();
+        };
+        Gameplay.prototype.saveHamster = function () {
+            var _this = this;
+            this.hamster.position.set(-200, -200);
+            this.hamster.physicsEnabled = false;
+            this.hamster.kill();
+            this.game.time.events.add(Phaser.Timer.SECOND * 3, function () {
+                _this.placeHamsterOnStart();
+            });
         };
         Gameplay.prototype.update = function () {
             var _this = this;
             this.game.physics.arcade.collide(this.hamster, this.playerMapLayer);
             this.game.physics.arcade.collide(this.hamster, this.predefinedMapLayer);
-            this.game.physics.arcade.overlap(this.hamster, this.deathSpace, function () {
-                _this.killHamster();
+            this.game.physics.arcade.collide(this.hamster, this.deathSpace, function (sprite1, sprite2) {
+                if (sprite1.alive) {
+                    _this.killHamster();
+                }
             });
             if (this.game.input.mousePointer.isDown) {
                 if (this.game.input.mousePointer.x > this.TILE_SIZE * 30) {
@@ -668,6 +730,10 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                 if (this.currentTile === PlayerTileType.SPRING) {
                     this.updatePlayerTileSpring();
                 }
+            }
+            if (this.shouldRevive) {
+                this.hamster.revive();
+                this.shouldRevive = false;
             }
         };
         Gameplay.prototype.updatePlayerTileGround = function () {

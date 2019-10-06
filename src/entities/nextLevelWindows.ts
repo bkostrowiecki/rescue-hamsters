@@ -6,6 +6,7 @@ export class NextLevelWindow extends Phaser.Group {
     private deathsText: Phaser.Text;
 
     private nextLevelButton: Phaser.Button;
+    private nextLevelButtonText: Phaser.Text;
 
     onNextLevelClick: () => void;
 
@@ -30,12 +31,15 @@ export class NextLevelWindow extends Phaser.Group {
         this.deathsText.anchor.set(0.5, 0.5);
         this.add(this.deathsText);
 
-        this.nextLevelButton = game.add.button(this.game.canvas.width / 2, this.game.canvas.height / 2 + 60, 'button', () => {
+        this.nextLevelButton = game.add.button(this.game.canvas.width / 2, this.game.canvas.height / 2 + 80, 'button', () => {
             this.onNextLevelClick();
         }, this, 2, 1, 0);
         this.nextLevelButton.input.useHandCursor = false;
         this.nextLevelButton.anchor.set(0.5, 0.5);
         this.add(this.nextLevelButton);
+
+        this.nextLevelButtonText = game.add.text(this.game.canvas.width / 2, this.game.canvas.height / 2 + 80, 'Start next level', this.getButtonFontStyle(), this);
+        this.nextLevelButtonText.anchor.set(0.5, 0.5);
     }
 
     private getFontStyles() {
@@ -44,6 +48,15 @@ export class NextLevelWindow extends Phaser.Group {
             strokeThickness: 12,
             fill: '#fff',
             font: '32px Comic Sans MS, Impact'
+        }
+    }
+
+    private getButtonFontStyle() {
+        return {
+            stroke: '#000',
+            strokeThickness: 8,
+            fill: '#fff',
+            font: '18px Comic Sans MS, Impact'
         }
     }
 }

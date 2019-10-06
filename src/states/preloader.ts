@@ -38,7 +38,7 @@ export class Preloader extends Phaser.State {
 
         this.game.load.audio('select-tile', 'bin/assets/select-tile.ogg');
 
-        this.game.load.spritesheet('button', 'bin/assets/next-level-button.png', 193, 71);
+        this.game.load.spritesheet('button', 'bin/assets/button.png', 179, 62);
 
         this.game.load.audio('music', 'bin/assets/music.ogg');
     }
