@@ -3,6 +3,8 @@
 import { Tiles as TileTypes } from '../helpers/tiles';
 import { HamsterEntity } from '../entities/hamster';
 import { CursorEntity } from '../entities/cursor';
+import { BloodBurstEntity } from '../entities/bloodBurst';
+import { MagicGlowEntity } from '../entities/magicGlow';
 
 export enum PlayerTileType {
     GROUND,
@@ -32,6 +34,8 @@ export class Gameplay extends Phaser.State {
     private springButton: Phaser.Sprite;
 
     private startPoint: Phaser.Point;
+    private startMagicGlow: MagicGlowEntity;
+    private finishMagicGlow: MagicGlowEntity;
 
     private deathSpace: Phaser.Sprite;
 
@@ -43,7 +47,8 @@ export class Gameplay extends Phaser.State {
 
     private levels = [
         'level-01',
-        'level-02'
+        'level-02',
+        'level-03'
     ];
 
     private currentLevelIndex = 0;
@@ -83,12 +88,12 @@ export class Gameplay extends Phaser.State {
         );
 
         const background = this.game.add.image(
-            this.game.world.centerX,
+            this.game.world.centerX - this.TILE_SIZE,
             this.game.world.centerY,
             'background'
         );
         background.anchor.set(0.5);
-        background.scale.set(1.2);
+        background.scale.set(1);
 
         this.setupUi();
 
@@ -105,6 +110,14 @@ export class Gameplay extends Phaser.State {
         this.placeHamsterOnStart();
 
         this.setupTexts();
+
+        const nextLevelHotKey = this.game.input.keyboard.addKey(
+            Phaser.Keyboard.P
+        );
+        nextLevelHotKey.onDown.add(() => {
+            this.setupNextLevel();
+            this.placeHamsterOnStart();
+        }, this);
     }
 
     private setupTexts() {
@@ -193,6 +206,22 @@ export class Gameplay extends Phaser.State {
         this.predefinedMapLayer = this.predefinedMap.createLayer(0);
 
         this.startPoint = this.findStartLocation();
+        
+        if (this.startMagicGlow) {
+            this.startMagicGlow.destroy();
+        }
+
+        const glowShift = this.TILE_SIZE/2;
+
+        this.startMagicGlow = new MagicGlowEntity(this.game, this.startPoint.x + glowShift, this.startPoint.y + glowShift);
+
+        const findFinishLocation = this.findFinishLocation();
+
+        if (this.finishMagicGlow) {
+            this.finishMagicGlow.destroy();
+        }
+
+        this.finishMagicGlow = new MagicGlowEntity(this.game, findFinishLocation.x + glowShift, findFinishLocation.y + glowShift);
 
         this.predefinedMap.setTileIndexCallback(
             1,
@@ -202,6 +231,10 @@ export class Gameplay extends Phaser.State {
             },
             this
         );
+
+        this.predefinedMap.setTileIndexCallback(2, () => {
+            this.killHamster();
+        }, this);
     }
 
     private findStartLocation() {
@@ -221,6 +254,25 @@ export class Gameplay extends Phaser.State {
         }
 
         throw new Error('Cannot find a start point for this map');
+    }
+
+    private findFinishLocation() {
+        var mapArray = (this.predefinedMapLayer as any).getTiles(
+            0,
+            0,
+            this.world.width,
+            this.world.height
+        );
+
+        for (var i = 0; i < mapArray.length; i++) {
+            var myTile = mapArray[i];
+
+            if (myTile.index == 1) {
+                return new Phaser.Point(myTile.worldX, myTile.worldY);
+            }
+        }
+
+        throw new Error('Cannot find a finish point for this map');
     }
 
     private setupUi() {
@@ -263,7 +315,7 @@ export class Gameplay extends Phaser.State {
 
     private activateGroundTile() {
         this.groundKey = this.game.input.keyboard.addKey(
-            Phaser.Keyboard.NUMPAD_1
+            Phaser.Keyboard.ONE
         );
         this.groundKey.onDown.add(() => {
             this.currentTile = PlayerTileType.GROUND;
@@ -283,7 +335,7 @@ export class Gameplay extends Phaser.State {
 
     private activateSpringTile() {
         this.springKey = this.game.input.keyboard.addKey(
-            Phaser.Keyboard.NUMPAD_2
+            Phaser.Keyboard.TWO
         );
         this.springKey.onDown.add(() => {
             this.currentTile = PlayerTileType.SPRING;
@@ -304,19 +356,33 @@ export class Gameplay extends Phaser.State {
         this.springButton.z = -1;
     }
 
+    private killHamster() {
+        const blood = new BloodBurstEntity(this.game, this.hamster.position.x + this.hamster.body.velocity.x*0.15, this.hamster.position.y);
+
+        this.hamster.kill();
+
+        this.placeHamsterOnStart();
+
+        this.hamster.revive(100);
+
+        this.game.time.events.add(Phaser.Timer.SECOND * 3, () => {
+            blood.destroy();
+        }, this);
+
+        this.deathCounter++;
+    }
+
+    private placeMagicGlows() {
+        
+    }
+
     update() {
         this.game.physics.arcade.collide(this.hamster, this.playerMapLayer);
 
         this.game.physics.arcade.collide(this.hamster, this.predefinedMapLayer);
 
         this.game.physics.arcade.overlap(this.hamster, this.deathSpace, () => {
-            this.hamster.kill();
-
-            this.placeHamsterOnStart();
-
-            this.hamster.revive(100);
-
-            this.deathCounter++;
+            this.killHamster();
         });
 
         if (this.game.input.mousePointer.isDown) {

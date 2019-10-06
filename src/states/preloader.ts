@@ -17,11 +17,15 @@ export class Preloader extends Phaser.State {
 
         this.game.load.spritesheet('hamster-bumpster', 'bin/assets/hamster_bumpster.png', 47, 34, 12);
 
-        this.game.load.image('background', 'bin/assets/background.png');
+        this.game.load.image('background', 'bin/assets/landscape.png');
         this.game.load.image('frame', 'bin/assets/frame.png');
+
+        this.game.load.image('blood-cell', 'bin/assets/blood-cell.png');
+        this.game.load.image('magic-glow-particle', 'bin/assets/magic-glow-particle.png');
 
         this.game.load.tilemap('level-01', 'bin/assets/level01.csv');
         this.game.load.tilemap('level-02', 'bin/assets/level02.csv');
+        this.game.load.tilemap('level-03', 'bin/assets/level03.csv');
     }
 
     create() {
