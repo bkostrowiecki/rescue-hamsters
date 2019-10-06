@@ -25,7 +25,7 @@ export class Splash extends Phaser.State {
         this.background.anchor.set(0.5);
         this.background.scale.set(1.1);
 
-        this.title = new WobblingText(this.game, this.game.world.centerX, this.game.world.centerY - 200, 'Hamster rescue!', this.getFontStyles('120px'));
+        this.title = new WobblingText(this.game, this.game.world.centerX, this.game.world.centerY - 200, 'Rescue hamsters!', this.getFontStyles('120px'));
         this.title.anchor.set(0.5);
 
         this.bigHamster = this.game.add.image(this.world.centerX, this.world.centerY, 'hamster-big');

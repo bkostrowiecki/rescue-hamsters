@@ -9,6 +9,7 @@ import { NextLevelWindow } from '../entities/nextLevelWindows';
 import { NextLevelCounter } from '../entities/nextLevelCounter';
 import { WobblingText } from '../entities/wobblingText';
 import { DisapearingText } from '../entities/disapearingText';
+import { YouLooseWindow } from '../entities/youLooseWindow';
 
 export enum PlayerTileType {
     GROUND,
@@ -49,6 +50,9 @@ export class Gameplay extends Phaser.State {
     private deathCounterText: Phaser.Text;
     private savedCounterText: WobblingText;
 
+    private hamsterCounter: number;
+    private hamsterCounterText: Phaser.Text;
+
     private selectTileSound: Phaser.Sound;
 
     private shouldRevive: boolean;
@@ -64,17 +68,28 @@ export class Gameplay extends Phaser.State {
 
     private requiredSavesForNextLevel = [
         1,
+        2,
         3,
         3,
         5,
+        5
+    ];
+
+    private availableHamster = [
         5,
-        10
+        5,
+        5,
+        5,
+        10,
+        15
     ];
 
     private currentLevelIndex = 0;
 
     private nextLevelWindow: NextLevelWindow;
     private nextLevelCounter: NextLevelCounter;
+
+    private youLooseWindow: YouLooseWindow;
 
     preload() {}
 
@@ -118,7 +133,7 @@ export class Gameplay extends Phaser.State {
         background.anchor.set(0.5);
         background.scale.set(1);
 
-        this.setupUi();
+        this.setupTilesFrame();
 
         this.setupPredefinedMap(this.levels[this.currentLevelIndex]);
         this.setupPlayerMap();
@@ -147,6 +162,9 @@ export class Gameplay extends Phaser.State {
         }, this);
 
         this.selectTileSound = this.game.add.audio('select-tile');
+
+        this.hamsterCounter = 0;
+        this.deathCounter = 0;
     }
 
     private setupTexts() {
@@ -156,10 +174,18 @@ export class Gameplay extends Phaser.State {
         if (this.savedCounterText) {
             this.savedCounterText.destroy();
         }
+        if (this.hamsterCounterText) {
+            this.hamsterCounterText.destroy();
+        }
 
-        this.deathCounterText = this.game.add.text(0, 0, '', this.getFontStyles());
+        this.deathCounterText =  new WobblingText(this.game, this.game.world.centerX + 200, this.TILE_SIZE, '', this.getFontStyles());
+        this.deathCounterText.anchor.set(0.5, 0.5);
+
         this.savedCounterText = new WobblingText(this.game, this.game.world.centerX, this.TILE_SIZE, '', this.getFontStyles());
-        this.savedCounterText.anchor.set(0.5, 0.5)
+        this.savedCounterText.anchor.set(0.5, 0.5);
+
+        this.hamsterCounterText = new WobblingText(this.game, this.game.world.centerX - 200, this.TILE_SIZE, '', this.getFontStyles());
+        this.hamsterCounterText.anchor.set(0.5, 0.5);
     }
 
     private placeHamsterOnStart() {
@@ -219,13 +245,30 @@ export class Gameplay extends Phaser.State {
     }
 
     private setupNextLevel() {
+        this.destroyMaps();
+
+        this.setupPredefinedMap(this.levels[++this.currentLevelIndex]);
+        
+        this.setupLevelStart();
+    }
+
+    private setupCurrentLevel() {
+        this.destroyMaps();
+
+        this.setupPredefinedMap(this.levels[this.currentLevelIndex]);
+        
+        this.setupLevelStart();
+    }
+
+    private destroyMaps() {
         this.predefinedMapLayer.destroy();
         this.predefinedMap.destroy();
 
         this.playerMapLayer.destroy();
         this.playerMap.destroy();
+    }
 
-        this.setupPredefinedMap(this.levels[++this.currentLevelIndex]);
+    private setupLevelStart() {
         this.setupPlayerMap();
 
         this.activateTilesBasedOnAvalability();
@@ -240,6 +283,8 @@ export class Gameplay extends Phaser.State {
 
             this.placeHamsterOnStart();
         };
+
+        this.hamsterCounter = 0;
     }
 
     private getFontStyles() {
@@ -342,8 +387,8 @@ export class Gameplay extends Phaser.State {
         throw new Error('Cannot find a finish point for this map');
     }
 
-    private setupUi() {
-        const frame = this.game.add.image(this.game.world.width, 0, 'frame');
+    private setupTilesFrame() {
+        const frame = this.game.add.image(this.game.canvas.width, 0, 'frame');
         frame.anchor.set(1, 0);
     }
 
@@ -406,7 +451,7 @@ export class Gameplay extends Phaser.State {
         }, this);
 
         this.groundButton = this.game.add.sprite(
-            this.game.world.width - this.TILE_SIZE / 2,
+            this.game.canvas.width - this.TILE_SIZE / 2,
             this.TILE_SIZE / 2,
             'tiles-sheet'
         );
@@ -427,7 +472,7 @@ export class Gameplay extends Phaser.State {
         }, this);
 
         this.springButton = this.game.add.sprite(
-            this.game.world.width + this.TILE_SIZE / 2,
+            this.game.canvas.width - this.TILE_SIZE * 1.5,
             this.TILE_SIZE / 2 + 64,
             'tiles-sheet'
         );
@@ -438,8 +483,6 @@ export class Gameplay extends Phaser.State {
             this.currentTile = PlayerTileType.SPRING;
             this.selectTileSound.play();
         }, this);
-
-        this.springButton.z = -1;
     }
 
     private killHamster(noBlood?: boolean) {
@@ -448,7 +491,7 @@ export class Gameplay extends Phaser.State {
             blood = new BloodBurstEntity(this.game, this.hamster.position.x + this.hamster.body.velocity.x*0.15, this.hamster.position.y);
         }
         
-        const deathInfo = new DisapearingText(this.game, this.hamster.x, this.hamster.y, '+1 Death', this.getFontStyles(), 3000);
+        const deathInfo = new DisapearingText(this.game, this.hamster.x, this.hamster.y, '-1 Hamster', this.getFontStyles(), 3000);
         this.game.time.events.add(Phaser.Timer.SECOND * 4, () => {
             deathInfo.destroy();
         });
@@ -456,6 +499,23 @@ export class Gameplay extends Phaser.State {
         this.hamster.position.set(-200, -200);
         this.hamster.physicsEnabled = false;
         this.hamster.kill();
+
+        if (this.hamsterCounter === this.availableHamster[this.currentLevelIndex]) {
+            this.youLooseWindow = new YouLooseWindow(this.game, this.requiredSavesForNextLevel[this.currentLevelIndex]);
+
+            this.setupCursor();
+
+            this.hamsterCounter = this.availableHamster[this.currentLevelIndex] + 1;
+
+            this.youLooseWindow.onRetryClick = () => {
+                this.setupCurrentLevel();
+
+                this.youLooseWindow.destroy();
+                this.youLooseWindow = undefined;
+            };
+
+            return;
+        }
 
         this.game.time.events.add(Phaser.Timer.SECOND * 3, () => {
             this.placeHamsterOnStart();
@@ -478,6 +538,11 @@ export class Gameplay extends Phaser.State {
     }
 
     private saveHamster() {
+        const deathInfo = new DisapearingText(this.game, this.hamster.x, this.hamster.y, '+1 Saved', this.getFontStyles(), 3000);
+        this.game.time.events.add(Phaser.Timer.SECOND * 4, () => {
+            deathInfo.destroy();
+        });
+
         this.hamster.position.set(-200, -200);
         this.hamster.physicsEnabled = false;
         this.hamster.kill();
@@ -530,6 +595,7 @@ export class Gameplay extends Phaser.State {
 
         if (this.shouldRevive) {
             this.hamster.revive();
+            this.hamsterCounter++;
             this.shouldRevive = false;
         }
     }
@@ -603,9 +669,16 @@ export class Gameplay extends Phaser.State {
         // this.game.debug.bodyInfo(this.hamster, 0, 0);
         // this.game.debug.body(this.hamster);
 
-        // this.deathCounterText.text = 'Dead hamsters: ' + this.deathCounter.toString();
+        if (this.deathCounterText) {
+            this.deathCounterText.text = 'Dead  ' + this.deathCounter.toString();
+        }
+
         if (this.savedCounterText) {
-            this.savedCounterText.text = 'Saved ' + this.savedCounter.toString() + '/' + this.requiredSavesForNextLevel[this.currentLevelIndex];
+            this.savedCounterText.text = 'Saved  ' + this.savedCounter.toString() + '/' + this.requiredSavesForNextLevel[this.currentLevelIndex];
+        }
+
+        if (this.hamsterCounterText) {
+            this.hamsterCounterText.text = 'Hamster  ' + (Math.min(this.availableHamster[this.currentLevelIndex] - this.hamsterCounter + 1, this.availableHamster[this.currentLevelIndex])).toString() + '/' + this.availableHamster[this.currentLevelIndex];
         }
     }
 }
