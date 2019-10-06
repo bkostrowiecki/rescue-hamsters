@@ -1,4 +1,5 @@
 export class DisapearingText extends Phaser.Text {
+    onDestroy: () => void;
     constructor(game: Phaser.Game, x: number, y: number, text: string, style: any, time?: number) {
         super(game, x, y, text, style);
 
@@ -11,5 +12,12 @@ export class DisapearingText extends Phaser.Text {
         this.game.add.tween(this).to({
             alpha: 0
         }, 500, Phaser.Easing.Linear.None, true, time ? time - 500 : 2500);
+
+        this.game.time.events.add(!!time ? time : 3000 , () => {
+            this.destroy();
+            if (this.onDestroy) {
+                this.onDestroy();
+            }
+        }, this);
     }
 }

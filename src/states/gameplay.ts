@@ -71,7 +71,7 @@ export class Gameplay extends Phaser.State {
         2,
         3,
         3,
-        5,
+        3,
         5
     ];
 
@@ -80,9 +80,29 @@ export class Gameplay extends Phaser.State {
         5,
         5,
         5,
-        10,
+        15,
         15
     ];
+
+    private levelLimits = [{
+        ground: 30,
+        springs: 0
+    }, {
+        ground: 30,
+        springs: 3
+    }, {
+        ground: 30,
+        springs: 3
+    }, {
+        ground: 40,
+        springs: 4
+    }, {
+        ground: 60,
+        springs: 5
+    }, {
+        ground: 60,
+        springs: 5
+    }];
 
     private currentLevelIndex = 0;
 
@@ -90,6 +110,14 @@ export class Gameplay extends Phaser.State {
     private nextLevelCounter: NextLevelCounter;
 
     private youLooseWindow: YouLooseWindow;
+
+    private groundTilesNumber: number = 0;
+    private springTilesNumber: number = 0;
+
+    private groundText: WobblingText;
+    private springText: WobblingText;
+
+    private limitReachedText: DisapearingText;
 
     preload() {}
 
@@ -269,6 +297,9 @@ export class Gameplay extends Phaser.State {
     }
 
     private setupLevelStart() {
+        this.groundTilesNumber = 0;
+        this.springTilesNumber = 0;
+
         this.setupPlayerMap();
 
         this.activateTilesBasedOnAvalability();
@@ -461,6 +492,9 @@ export class Gameplay extends Phaser.State {
             this.currentTile = PlayerTileType.GROUND;
             this.selectTileSound.play();
         }, this);
+
+        this.groundText = new WobblingText(this.game, this.groundButton.x, this.groundButton.y + this.TILE_SIZE, '0', this.getTileCounterFontStyle());
+        this.groundText.anchor.set(0.5, 0.5);
     }
 
     private activateSpringTile() {
@@ -483,6 +517,18 @@ export class Gameplay extends Phaser.State {
             this.currentTile = PlayerTileType.SPRING;
             this.selectTileSound.play();
         }, this);
+
+        this.springText = new WobblingText(this.game, this.springButton.x + this.TILE_SIZE, this.springButton.y + this.TILE_SIZE, '0', this.getTileCounterFontStyle());
+        this.springText.anchor.set(0.5, 0.5);
+    }
+
+    private getTileCounterFontStyle() {
+        return {
+            stroke: '#000',
+            strokeThickness: 6,
+            fill: '#fff',
+            font: '18px Comic Sans MS, Impact'
+        };
     }
 
     private killHamster(noBlood?: boolean) {
@@ -563,6 +609,8 @@ export class Gameplay extends Phaser.State {
             }
         });
 
+        const currentLimits = this.levelLimits[this.currentLevelIndex];
+
         if (this.game.input.mousePointer.isDown) {
             if (this.game.input.mousePointer.x > this.TILE_SIZE * 30) {
                 return;
@@ -573,14 +621,7 @@ export class Gameplay extends Phaser.State {
             }
 
             if (this.game.input.keyboard.isDown(Phaser.Keyboard.SHIFT)) {
-                this.playerMap.putTileWorldXY(
-                    TileTypes.NONE,
-                    this.game.input.mousePointer.x,
-                    this.game.input.mousePointer.y,
-                    this.TILE_SIZE,
-                    this.TILE_SIZE,
-                    this.playerMapLayer
-                );
+                this.deletePlayerTile();
                 return;
             }
 
@@ -600,7 +641,41 @@ export class Gameplay extends Phaser.State {
         }
     }
 
+    private deletePlayerTile() {
+        const thisTile = this.playerMap.getTileWorldXY(
+            this.game.input.mousePointer.x,
+            this.game.input.mousePointer.y
+        );
+
+        this.returnTileInType(thisTile);
+
+        this.playerMap.putTileWorldXY(
+            TileTypes.NONE,
+            this.game.input.mousePointer.x,
+            this.game.input.mousePointer.y,
+            this.TILE_SIZE,
+            this.TILE_SIZE,
+            this.playerMapLayer
+        );
+    }
+
     private updatePlayerTileGround() {
+        const thisTile = this.playerMap.getTileWorldXY(
+            this.game.input.mousePointer.x,
+            this.game.input.mousePointer.y
+        );
+
+        if (!!thisTile && (thisTile.index === TileTypes.TOP_GROUND || thisTile.index === TileTypes.MIDDLE_GROUND)) {
+            return;
+        }
+
+        if (this.groundTilesNumber === this.levelLimits[this.currentLevelIndex].ground) {
+            this.notifyAboutLimit();
+            return;
+        }
+
+        this.returnTileInType(thisTile);
+
         let tileTypeToPlace = TileTypes.NONE;
 
         const tileAbove = this.playerMap.getTileWorldXY(
@@ -641,6 +716,8 @@ export class Gameplay extends Phaser.State {
             this.TILE_SIZE,
             this.playerMapLayer
         );
+
+        this.groundTilesNumber++;
     }
 
     private checkIfPlayerCanPlaceTile() {
@@ -655,6 +732,22 @@ export class Gameplay extends Phaser.State {
     private updatePlayerTileSpring() {
         let tileTypeToPlace = TileTypes.SPRING;
 
+        const thisTile = this.playerMap.getTileWorldXY(
+            this.game.input.mousePointer.x,
+            this.game.input.mousePointer.y
+        );
+
+        if (!!thisTile && thisTile.index === TileTypes.SPRING) {
+            return;
+        }
+
+        if (this.springTilesNumber === this.levelLimits[this.currentLevelIndex].springs) {
+            this.notifyAboutLimit();
+            return;
+        }
+
+        this.returnTileInType(thisTile);
+
         this.playerMap.putTileWorldXY(
             tileTypeToPlace,
             this.game.input.mousePointer.x,
@@ -663,6 +756,29 @@ export class Gameplay extends Phaser.State {
             this.TILE_SIZE,
             this.playerMapLayer
         );
+
+        this.springTilesNumber++;
+    }
+
+    private returnTileInType(thisTile) {
+        if (thisTile == null) {
+            return;
+        }
+
+        if (thisTile.index === TileTypes.SPRING) {
+            this.springTilesNumber--;
+        } else if (thisTile.index === TileTypes.TOP_GROUND || thisTile.index === TileTypes.MIDDLE_GROUND) {
+            this.groundTilesNumber--;
+        }
+    }
+
+    private notifyAboutLimit() {
+        if (!this.limitReachedText) {
+            this.limitReachedText = new DisapearingText(this.game, this.input.mousePointer.x, this.input.mousePointer.y, 'Limit reached', this.getFontStyles(), 2000);
+            this.limitReachedText.onDestroy = () => {
+                this.limitReachedText = undefined;
+            }
+        }
     }
 
     render() {
@@ -679,6 +795,14 @@ export class Gameplay extends Phaser.State {
 
         if (this.hamsterCounterText) {
             this.hamsterCounterText.text = 'Hamster  ' + (Math.min(this.availableHamster[this.currentLevelIndex] - this.hamsterCounter + 1, this.availableHamster[this.currentLevelIndex])).toString() + '/' + this.availableHamster[this.currentLevelIndex];
+        }
+
+        if (this.groundText) {
+            this.groundText.text = (this.levelLimits[this.currentLevelIndex].ground - this.groundTilesNumber).toString();
+        }
+
+        if (this.springText) {
+            this.springText.text = (this.levelLimits[this.currentLevelIndex].springs - this.springTilesNumber).toString();
         }
     }
 }

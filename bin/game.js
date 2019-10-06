@@ -394,6 +394,12 @@ define("entities/disapearingText", ["require", "exports"], function (require, ex
             _this.game.add.tween(_this).to({
                 alpha: 0
             }, 500, Phaser.Easing.Linear.None, true, time ? time - 500 : 2500);
+            _this.game.time.events.add(!!time ? time : 3000, function () {
+                _this.destroy();
+                if (_this.onDestroy) {
+                    _this.onDestroy();
+                }
+            }, _this);
             return _this;
         }
         return DisapearingText;
@@ -478,7 +484,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                 2,
                 3,
                 3,
-                5,
+                3,
                 5
             ];
             _this.availableHamster = [
@@ -486,10 +492,31 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                 5,
                 5,
                 5,
-                10,
+                15,
                 15
             ];
+            _this.levelLimits = [{
+                    ground: 30,
+                    springs: 0
+                }, {
+                    ground: 30,
+                    springs: 3
+                }, {
+                    ground: 30,
+                    springs: 3
+                }, {
+                    ground: 40,
+                    springs: 4
+                }, {
+                    ground: 60,
+                    springs: 5
+                }, {
+                    ground: 60,
+                    springs: 5
+                }];
             _this.currentLevelIndex = 0;
+            _this.groundTilesNumber = 0;
+            _this.springTilesNumber = 0;
             return _this;
         }
         Gameplay.prototype.preload = function () { };
@@ -604,6 +631,8 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
         };
         Gameplay.prototype.setupLevelStart = function () {
             var _this = this;
+            this.groundTilesNumber = 0;
+            this.springTilesNumber = 0;
             this.setupPlayerMap();
             this.activateTilesBasedOnAvalability();
             this.setupTexts();
@@ -730,6 +759,8 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                 _this.currentTile = PlayerTileType.GROUND;
                 _this.selectTileSound.play();
             }, this);
+            this.groundText = new wobblingText_2.WobblingText(this.game, this.groundButton.x, this.groundButton.y + this.TILE_SIZE, '0', this.getTileCounterFontStyle());
+            this.groundText.anchor.set(0.5, 0.5);
         };
         Gameplay.prototype.activateSpringTile = function () {
             var _this = this;
@@ -744,6 +775,16 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                 _this.currentTile = PlayerTileType.SPRING;
                 _this.selectTileSound.play();
             }, this);
+            this.springText = new wobblingText_2.WobblingText(this.game, this.springButton.x + this.TILE_SIZE, this.springButton.y + this.TILE_SIZE, '0', this.getTileCounterFontStyle());
+            this.springText.anchor.set(0.5, 0.5);
+        };
+        Gameplay.prototype.getTileCounterFontStyle = function () {
+            return {
+                stroke: '#000',
+                strokeThickness: 6,
+                fill: '#fff',
+                font: '18px Comic Sans MS, Impact'
+            };
         };
         Gameplay.prototype.killHamster = function (noBlood) {
             var _this = this;
@@ -807,6 +848,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                     _this.killHamster();
                 }
             });
+            var currentLimits = this.levelLimits[this.currentLevelIndex];
             if (this.game.input.mousePointer.isDown) {
                 if (this.game.input.mousePointer.x > this.TILE_SIZE * 30) {
                     return;
@@ -815,7 +857,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                     return;
                 }
                 if (this.game.input.keyboard.isDown(Phaser.Keyboard.SHIFT)) {
-                    this.playerMap.putTileWorldXY(tiles_1.PlayerTiles.NONE, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.playerMapLayer);
+                    this.deletePlayerTile();
                     return;
                 }
                 if (this.currentTile === PlayerTileType.GROUND) {
@@ -831,7 +873,21 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                 this.shouldRevive = false;
             }
         };
+        Gameplay.prototype.deletePlayerTile = function () {
+            var thisTile = this.playerMap.getTileWorldXY(this.game.input.mousePointer.x, this.game.input.mousePointer.y);
+            this.returnTileInType(thisTile);
+            this.playerMap.putTileWorldXY(tiles_1.PlayerTiles.NONE, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.playerMapLayer);
+        };
         Gameplay.prototype.updatePlayerTileGround = function () {
+            var thisTile = this.playerMap.getTileWorldXY(this.game.input.mousePointer.x, this.game.input.mousePointer.y);
+            if (!!thisTile && (thisTile.index === tiles_1.PlayerTiles.TOP_GROUND || thisTile.index === tiles_1.PlayerTiles.MIDDLE_GROUND)) {
+                return;
+            }
+            if (this.groundTilesNumber === this.levelLimits[this.currentLevelIndex].ground) {
+                this.notifyAboutLimit();
+                return;
+            }
+            this.returnTileInType(thisTile);
             var tileTypeToPlace = tiles_1.PlayerTiles.NONE;
             var tileAbove = this.playerMap.getTileWorldXY(this.game.input.mousePointer.x, this.game.input.mousePointer.y - this.TILE_SIZE, this.TILE_SIZE, this.TILE_SIZE);
             if (!!tileAbove &&
@@ -847,6 +903,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                 this.playerMap.putTileWorldXY(tiles_1.PlayerTiles.MIDDLE_GROUND, tileBelow.worldX, tileBelow.worldY, this.TILE_SIZE, this.TILE_SIZE);
             }
             this.playerMap.putTileWorldXY(tileTypeToPlace, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.playerMapLayer);
+            this.groundTilesNumber++;
         };
         Gameplay.prototype.checkIfPlayerCanPlaceTile = function () {
             var tile = this.predefinedMap.getTileWorldXY(this.game.input.mousePointer.x, this.game.input.mousePointer.y);
@@ -854,7 +911,37 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
         };
         Gameplay.prototype.updatePlayerTileSpring = function () {
             var tileTypeToPlace = tiles_1.PlayerTiles.SPRING;
+            var thisTile = this.playerMap.getTileWorldXY(this.game.input.mousePointer.x, this.game.input.mousePointer.y);
+            if (!!thisTile && thisTile.index === tiles_1.PlayerTiles.SPRING) {
+                return;
+            }
+            if (this.springTilesNumber === this.levelLimits[this.currentLevelIndex].springs) {
+                this.notifyAboutLimit();
+                return;
+            }
+            this.returnTileInType(thisTile);
             this.playerMap.putTileWorldXY(tileTypeToPlace, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.playerMapLayer);
+            this.springTilesNumber++;
+        };
+        Gameplay.prototype.returnTileInType = function (thisTile) {
+            if (thisTile == null) {
+                return;
+            }
+            if (thisTile.index === tiles_1.PlayerTiles.SPRING) {
+                this.springTilesNumber--;
+            }
+            else if (thisTile.index === tiles_1.PlayerTiles.TOP_GROUND || thisTile.index === tiles_1.PlayerTiles.MIDDLE_GROUND) {
+                this.groundTilesNumber--;
+            }
+        };
+        Gameplay.prototype.notifyAboutLimit = function () {
+            var _this = this;
+            if (!this.limitReachedText) {
+                this.limitReachedText = new disapearingText_1.DisapearingText(this.game, this.input.mousePointer.x, this.input.mousePointer.y, 'Limit reached', this.getFontStyles(), 2000);
+                this.limitReachedText.onDestroy = function () {
+                    _this.limitReachedText = undefined;
+                };
+            }
         };
         Gameplay.prototype.render = function () {
             // this.game.debug.bodyInfo(this.hamster, 0, 0);
@@ -867,6 +954,12 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             }
             if (this.hamsterCounterText) {
                 this.hamsterCounterText.text = 'Hamster  ' + (Math.min(this.availableHamster[this.currentLevelIndex] - this.hamsterCounter + 1, this.availableHamster[this.currentLevelIndex])).toString() + '/' + this.availableHamster[this.currentLevelIndex];
+            }
+            if (this.groundText) {
+                this.groundText.text = (this.levelLimits[this.currentLevelIndex].ground - this.groundTilesNumber).toString();
+            }
+            if (this.springText) {
+                this.springText.text = (this.levelLimits[this.currentLevelIndex].springs - this.springTilesNumber).toString();
             }
         };
         return Gameplay;
@@ -901,28 +994,4 @@ define("game", ["require", "exports", "states/boot", "states/preloader", "states
         var game = new Game();
     }
     exports.default = bootGame;
-});
-/// <reference path="../../node_modules/phaser/typescript/phaser.d.ts" />
-define("entities/virusBase", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var VirusBase = /** @class */ (function (_super) {
-        __extends(VirusBase, _super);
-        function VirusBase(game, x, y, key, frame) {
-            var _this = _super.call(this, game, x, y, key, frame) || this;
-            _this.attackCallback = function () { };
-            _this.deathCallback = function () { };
-            return _this;
-        }
-        VirusBase.prototype.attachDeathCallback = function (deathCallback) {
-            this.deathCallback = deathCallback;
-        };
-        VirusBase.prototype.attachAttackCallback = function (attackCallback) {
-            this.attackCallback = attackCallback;
-        };
-        VirusBase.prototype.heartIsDead = function () {
-        };
-        return VirusBase;
-    }(Phaser.Sprite));
-    exports.VirusBase = VirusBase;
 });
