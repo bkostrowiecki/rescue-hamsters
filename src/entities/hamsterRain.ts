@@ -13,6 +13,7 @@ export class HamsterRain extends Phaser.Particles.Arcade.Emitter {
 	    this.maxParticleScale = 2;
         this.alpha = 1;
         this.gravity = 0;
+        this.game.physics.arcade.gravity.y = 0;
 
 	    this.setYSpeed(-5, 5);
 	    this.setXSpeed(100, 200);

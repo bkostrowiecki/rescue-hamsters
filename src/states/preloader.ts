@@ -59,6 +59,6 @@ export class Preloader extends Phaser.State {
     }
 
     startSplash() {
-        this.game.state.start('Win', true, false);
+        this.game.state.start('Splash', true, false);
     }
 }

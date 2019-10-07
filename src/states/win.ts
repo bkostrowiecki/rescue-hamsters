@@ -19,6 +19,13 @@ export class Win extends Phaser.State {
     }
 
     create() {
+        this.game.world.setBounds(
+            0,
+            0,
+            32 * 32,
+            32 * 20
+        );
+    
         this.game.input.onTap.add(this.onTap, this);
 
         this.background = this.game.add.image(
@@ -27,7 +34,7 @@ export class Win extends Phaser.State {
             'background'
         );
         this.background.anchor.set(0.5);
-        this.background.scale.set(1.1);
+        this.background.scale.set(1.2);
 
         this.hamsterRain = new HamsterRain(this.game);
 
@@ -44,14 +51,11 @@ died in the process!`, this.getFontStyles('40px'));
         this.cursor = new CursorEntity(this.game);
     }
 
-    destroy() {
-        (this.game as any).deathCounter = 0;
-    }
-
     onTap() {
         this.game.state.start('Splash', true, false);
+        window.location.reload();
     }
-
+    
     private getFontStyles(fontSize: string) {
         return {
             stroke: '#000',
@@ -61,13 +65,13 @@ died in the process!`, this.getFontStyles('40px'));
             align: 'center'
         }
     }
-
+    
     destroy() {
+        (this.game as any).deathCounter = 0;
         this.cursor.destroy();
         this.clickToPlay.destroy();
         this.title.destroy();
         this.background.destroy();
         this.bigHamster.destroy();
-        this.hamsterRain.destroy();
     }
 }

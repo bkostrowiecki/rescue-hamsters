@@ -63,13 +63,15 @@ export class Gameplay extends Phaser.State {
 
     private shouldRevive: boolean;
 
+    private playerTileIndicator: Phaser.Sprite;
+
     private levels = [
         'level-01',
-        'level-02',
-        'level-03',
-        'level-04',
-        'level-05',
-        'level-06'
+        // 'level-02',
+        // 'level-03',
+        // 'level-04',
+        // 'level-05',
+        // 'level-06'
     ];
 
     private requiredSavesForNextLevel = [
@@ -202,6 +204,10 @@ export class Gameplay extends Phaser.State {
             this.setupTexts();
             };
         });
+
+        this.playerTileIndicator = this.game.add.sprite(-200, -200, 'magic-glow-particle');
+        this.playerTileIndicator.scale.set(3);
+        this.playerTileIndicator.anchor.set(0.5, 0.5);
     }
 
     destroy() {
@@ -213,6 +219,9 @@ export class Gameplay extends Phaser.State {
         this.groundText.destroy();
         this.springButton.destroy();
         this.springText.destroy();
+
+        this.startMagicGlow.destroy();
+        this.finishMagicGlow.destroy();
     }
 
     private setupTexts() {
@@ -301,6 +310,11 @@ export class Gameplay extends Phaser.State {
     private setupNextLevel() {
         this.destroyMaps();
 
+        if (!this.levels[this.currentLevelIndex + 1]) {
+            this.game.state.start('Win');
+            return;
+        }
+
         this.setupPredefinedMap(this.levels[++this.currentLevelIndex]);
         
         this.setupLevelStart();
@@ -362,7 +376,7 @@ export class Gameplay extends Phaser.State {
 
         this.startPoint = this.findStartLocation();
         
-        if (this.startMagicGlow) {
+        if (this.startMagicGlow && this.startMagicGlow.game) {
             this.startMagicGlow.destroy();
         }
 
@@ -372,7 +386,7 @@ export class Gameplay extends Phaser.State {
 
         const findFinishLocation = this.findFinishLocation();
 
-        if (this.finishMagicGlow) {
+        if (this.finishMagicGlow && this.finishMagicGlow.game) {
             this.finishMagicGlow.destroy();
         }
 
@@ -502,7 +516,7 @@ export class Gameplay extends Phaser.State {
 
     private activateGroundTile() {
         this.groundKey = this.game.input.keyboard.addKey(
-            Phaser.Keyboard.ONE
+            Phaser.Keyboard.Z
         );
         this.groundKey.onDown.add(() => {
             this.currentTile = PlayerTileType.GROUND;
@@ -526,7 +540,7 @@ export class Gameplay extends Phaser.State {
 
     private activateHammerTile() {
         this.hammerKey = this.game.input.keyboard.addKey(
-            Phaser.Keyboard.ONE
+            Phaser.Keyboard.C
         );
         this.hammerKey.onDown.add(() => {
             this.currentTile = PlayerTileType.HAMMER;
@@ -551,7 +565,7 @@ export class Gameplay extends Phaser.State {
 
     private activateSpringTile() {
         this.springKey = this.game.input.keyboard.addKey(
-            Phaser.Keyboard.TWO
+            Phaser.Keyboard.X
         );
         this.springKey.onDown.add(() => {
             this.currentTile = PlayerTileType.SPRING;
@@ -704,6 +718,21 @@ export class Gameplay extends Phaser.State {
             this.hamster.revive();
             this.hamsterCounter++;
             this.shouldRevive = false;
+        }
+
+        if (this.currentTile === PlayerTileType.HAMMER) {
+            this.playerTileIndicator.position.set(this.game.canvas.width - 48, 32 * 4.5);
+            this.playerTileIndicator.bringToTop();
+        }
+
+        if (this.currentTile === PlayerTileType.GROUND) {
+            this.playerTileIndicator.position.set(this.game.canvas.width - 48, 32 * 0.5);
+            this.playerTileIndicator.bringToTop();
+        }
+
+        if (this.currentTile === PlayerTileType.SPRING) {
+            this.playerTileIndicator.position.set(this.game.canvas.width - 48, 32 * 2.5);
+            this.playerTileIndicator.bringToTop();
         }
     }
 
