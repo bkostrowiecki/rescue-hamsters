@@ -4,6 +4,7 @@ import { Boot } from 'states/boot';
 import { Preloader } from 'states/preloader';
 import { Splash } from 'states/splash';
 import { Gameplay } from 'states/gameplay';
+import { Win } from './states/win';
 
 class Game extends Phaser.Game
 {
@@ -24,6 +25,7 @@ class Game extends Phaser.Game
 		this.state.add('Preloader', Preloader, false);
 		this.state.add('Splash', Splash, false);
 		this.state.add('Gameplay', Gameplay, false);
+		this.state.add('Win', Win, false);
 
 		this.state.start('Boot');
 	}

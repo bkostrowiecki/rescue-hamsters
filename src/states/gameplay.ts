@@ -10,6 +10,8 @@ import { NextLevelCounter } from '../entities/nextLevelCounter';
 import { WobblingText } from '../entities/wobblingText';
 import { DisapearingText } from '../entities/disapearingText';
 import { YouLooseWindow } from '../entities/youLooseWindow';
+import { DeletionTutorialWindow } from '../entities/deletionTutorialWindow';
+import { GoalTutorialWindow } from '../entities/goalTutorialWindow';
 
 export enum PlayerTileType {
     GROUND,
@@ -85,13 +87,13 @@ export class Gameplay extends Phaser.State {
     ];
 
     private levelLimits = [{
-        ground: 30,
+        ground: 20,
         springs: 0
     }, {
-        ground: 30,
+        ground: 25,
         springs: 3
     }, {
-        ground: 30,
+        ground: 25,
         springs: 3
     }, {
         ground: 40,
@@ -170,16 +172,7 @@ export class Gameplay extends Phaser.State {
 
         this.setupDeathSpace();
 
-        this.nextLevelCounter = new NextLevelCounter(this.game, 3);
-        this.nextLevelCounter.onCounterFinish = () => {
-            this.nextLevelCounter.destroy();
-
-            this.cursor = new CursorEntity(this.game);
-
-            this.placeHamsterOnStart();
-
-            this.setupTexts();
-        };
+        
 
         const nextLevelHotKey = this.game.input.keyboard.addKey(
             Phaser.Keyboard.P
@@ -193,6 +186,30 @@ export class Gameplay extends Phaser.State {
 
         this.hamsterCounter = 0;
         this.deathCounter = 0;
+
+        this.notifyAboutGoal(() => {
+            this.nextLevelCounter = new NextLevelCounter(this.game, 3);
+            this.nextLevelCounter.onCounterFinish = () => {
+            this.nextLevelCounter.destroy();
+
+            this.cursor = new CursorEntity(this.game);
+
+            this.placeHamsterOnStart();
+
+            this.setupTexts();
+            };
+        });
+    }
+
+    destroy() {
+        this.hamster.destroy();
+        this.hamsterCounterText.destroy();
+        this.deathCounterText.destroy();
+        this.sound.destroy();
+        this.groundButton.destroy();
+        this.groundText.destroy();
+        this.springButton.destroy();
+        this.springText.destroy();
     }
 
     private setupTexts() {
@@ -532,6 +549,10 @@ export class Gameplay extends Phaser.State {
     }
 
     private killHamster(noBlood?: boolean) {
+        if (this.hamsterCounter === this.availableHamster[this.currentLevelIndex] + 1) {
+            return;
+        }
+
         let blood;
         if (!noBlood) {
             blood = new BloodBurstEntity(this.game, this.hamster.position.x + this.hamster.body.velocity.x*0.15, this.hamster.position.y);
@@ -584,7 +605,7 @@ export class Gameplay extends Phaser.State {
     }
 
     private saveHamster() {
-        const deathInfo = new DisapearingText(this.game, this.hamster.x, this.hamster.y, '+1 Saved', this.getFontStyles(), 3000);
+        const deathInfo = new DisapearingText(this.game, this.hamster.x, this.hamster.y, '+1 Rescued', this.getFontStyles(), 3000);
         this.game.time.events.add(Phaser.Timer.SECOND * 4, () => {
             deathInfo.destroy();
         });
@@ -608,6 +629,12 @@ export class Gameplay extends Phaser.State {
                 this.killHamster();
             }
         });
+
+        if (this.game.input.keyboard.isDown(Phaser.Keyboard.SHIFT)) {
+            this.cursor.enableDeleteMode();
+        } else {
+            this.cursor.enableNormalMode();
+        }
 
         const currentLimits = this.levelLimits[this.currentLevelIndex];
 
@@ -774,11 +801,55 @@ export class Gameplay extends Phaser.State {
 
     private notifyAboutLimit() {
         if (!this.limitReachedText) {
+            const deletionTutorial = JSON.parse(window.localStorage.getItem('deletion-tutorial'));
+
+            if (!deletionTutorial) {
+                this.notifyAboutDeletionPossibility();
+            }
+
             this.limitReachedText = new DisapearingText(this.game, this.input.mousePointer.x, this.input.mousePointer.y, 'Limit reached', this.getFontStyles(), 2000);
             this.limitReachedText.onDestroy = () => {
                 this.limitReachedText = undefined;
             }
         }
+    }
+
+    private notifyAboutDeletionPossibility() {
+        const deletionTutorialWindow = new DeletionTutorialWindow(this.game);
+        
+        window.localStorage.setItem('deletion-tutorial', JSON.stringify(true));
+
+        (this.game.physics.arcade as any).isPaused = true;
+
+        this.setupCursor();
+
+        deletionTutorialWindow.onOkClick = () => {
+            (this.game.physics.arcade as any).isPaused = false;
+            deletionTutorialWindow.destroy();
+        };
+    }
+
+    private notifyAboutGoal(callback: () => void) {
+        const goalTutorial = JSON.parse(window.localStorage.getItem('goal-tutorial'));
+
+        if (goalTutorial) {
+            callback();
+            return;
+        }
+
+        const goalTutorialWindow = new GoalTutorialWindow(this.game);
+        
+        window.localStorage.setItem('goal-tutorial', JSON.stringify(true));
+
+        (this.game.physics.arcade as any).isPaused = true;
+
+        this.setupCursor();
+
+        goalTutorialWindow.onOkClick = () => {
+            (this.game.physics.arcade as any).isPaused = false;
+            goalTutorialWindow.destroy();
+            callback();
+        };
     }
 
     render() {
@@ -790,7 +861,7 @@ export class Gameplay extends Phaser.State {
         }
 
         if (this.savedCounterText) {
-            this.savedCounterText.text = 'Saved  ' + this.savedCounter.toString() + '/' + this.requiredSavesForNextLevel[this.currentLevelIndex];
+            this.savedCounterText.text = 'Rescued  ' + this.savedCounter.toString() + '/' + this.requiredSavesForNextLevel[this.currentLevelIndex];
         }
 
         if (this.hamsterCounterText) {

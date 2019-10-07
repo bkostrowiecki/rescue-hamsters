@@ -58,6 +58,7 @@ define("states/preloader", ["require", "exports"], function (require, exports) {
             this.game.load.spritesheet('tiles-sheet', 'bin/assets/grid.png', 32, 32);
             this.game.load.image('hamster', 'bin/assets/hamster.png');
             this.game.load.image('cursor', 'bin/assets/cursor.png');
+            this.game.load.image('cursor-delete', 'bin/assets/cursor-delete.png');
             this.game.load.spritesheet('hamster-bumpster', 'bin/assets/hamster_bumpster.png', 47, 34, 12);
             this.game.load.image('background', 'bin/assets/landscape.png');
             this.game.load.image('frame', 'bin/assets/frame.png');
@@ -83,7 +84,7 @@ define("states/preloader", ["require", "exports"], function (require, exports) {
             this.game.input.gamepad.start();
         };
         Preloader.prototype.startSplash = function () {
-            this.game.state.start('Splash', true, false);
+            this.game.state.start('Win', true, false);
         };
         return Preloader;
     }(Phaser.State));
@@ -125,6 +126,12 @@ define("entities/cursor", ["require", "exports"], function (require, exports) {
         CursorEntity.prototype.update = function () {
             this.x = this.game.input.mousePointer.x - 8;
             this.y = this.game.input.mousePointer.y;
+        };
+        CursorEntity.prototype.enableDeleteMode = function () {
+            this.loadTexture('cursor-delete');
+        };
+        CursorEntity.prototype.enableNormalMode = function () {
+            this.loadTexture('cursor');
         };
         return CursorEntity;
     }(Phaser.Sprite));
@@ -453,8 +460,122 @@ define("entities/youLooseWindow", ["require", "exports"], function (require, exp
     }(Phaser.Group));
     exports.YouLooseWindow = YouLooseWindow;
 });
+define("entities/deletionTutorialWindow", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var DeletionTutorialWindow = /** @class */ (function (_super) {
+        __extends(DeletionTutorialWindow, _super);
+        function DeletionTutorialWindow(game) {
+            var _this = _super.call(this, game) || this;
+            _this.game.add.group(_this);
+            _this.window = _this.game.add.sprite(_this.game.canvas.width / 2, _this.game.canvas.height / 2, 'next-level-window');
+            _this.window.anchor.set(0.5, 0.5);
+            _this.add(_this.window);
+            _this.titleText = _this.game.add.text(_this.game.canvas.width / 2, _this.game.canvas.height / 2 - 90, 'You can delete tiles!', _this.getFontStyles());
+            _this.titleText.anchor.set(0.5, 0.5);
+            _this.add(_this.titleText);
+            _this.descriptionText = _this.game.add.text(_this.game.canvas.width / 2, _this.game.canvas.height / 2 + 10, "To delete tiles simply\nhold SHIFT and CLICK\nDeleted tiles will be returned \nto your inventory on right\n        ", _this.getInstructionsFontStyle());
+            _this.descriptionText.anchor.set(0.5, 0.5);
+            _this.descriptionText.lineSpacing = -10;
+            _this.add(_this.descriptionText);
+            _this.okButton = game.add.button(_this.game.canvas.width / 2, _this.game.canvas.height / 2 + 100, 'button', function () {
+                _this.onOkClick();
+            }, _this, 2, 1, 0);
+            _this.okButton.input.useHandCursor = false;
+            _this.okButton.anchor.set(0.5, 0.5);
+            _this.add(_this.okButton);
+            _this.okButtonText = game.add.text(_this.game.canvas.width / 2, _this.game.canvas.height / 2 + 100, 'Oookeeey!', _this.getButtonFontStyle(), _this);
+            _this.okButtonText.anchor.set(0.5, 0.5);
+            return _this;
+        }
+        DeletionTutorialWindow.prototype.getFontStyles = function () {
+            return {
+                stroke: '#000',
+                strokeThickness: 12,
+                fill: '#fff',
+                font: '32px Comic Sans MS, Impact'
+            };
+        };
+        DeletionTutorialWindow.prototype.getButtonFontStyle = function () {
+            return {
+                stroke: '#000',
+                strokeThickness: 8,
+                fill: '#fff',
+                font: '18px Comic Sans MS, Impact'
+            };
+        };
+        DeletionTutorialWindow.prototype.getInstructionsFontStyle = function () {
+            return {
+                stroke: '#000',
+                strokeThickness: 8,
+                fill: '#fff',
+                font: '18px Comic Sans MS, Impact'
+            };
+        };
+        return DeletionTutorialWindow;
+    }(Phaser.Group));
+    exports.DeletionTutorialWindow = DeletionTutorialWindow;
+});
+define("entities/goalTutorialWindow", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var GoalTutorialWindow = /** @class */ (function (_super) {
+        __extends(GoalTutorialWindow, _super);
+        function GoalTutorialWindow(game) {
+            var _this = _super.call(this, game) || this;
+            _this.game.add.group(_this);
+            _this.window = _this.game.add.sprite(_this.game.canvas.width / 2, _this.game.canvas.height / 2, 'next-level-window');
+            _this.window.anchor.set(0.5, 0.5);
+            _this.add(_this.window);
+            _this.titleText = _this.game.add.text(_this.game.canvas.width / 2, _this.game.canvas.height / 2 - 100, 'Rescue hamsters!', _this.getFontStyles());
+            _this.titleText.anchor.set(0.5, 0.5);
+            _this.add(_this.titleText);
+            _this.descriptionText = _this.game.add.text(_this.game.canvas.width / 2, _this.game.canvas.height / 2 + 10, "Hamsters are too stupid to\nfind the way out,\nso you need to build the level for them\nso they can go forward.\nNumber of hamster to save is given above.\n        ", _this.getInstructionsFontStyle());
+            _this.descriptionText.anchor.set(0.5, 0.5);
+            _this.descriptionText.lineSpacing = -10;
+            _this.add(_this.descriptionText);
+            _this.okButton = game.add.button(_this.game.canvas.width / 2, _this.game.canvas.height / 2 + 100, 'button', function () {
+                _this.onOkClick();
+            }, _this, 2, 1, 0);
+            _this.okButton.input.useHandCursor = false;
+            _this.okButton.anchor.set(0.5, 0.5);
+            _this.add(_this.okButton);
+            _this.okButtonText = game.add.text(_this.game.canvas.width / 2, _this.game.canvas.height / 2 + 100, 'I get it!', _this.getButtonFontStyle(), _this);
+            _this.okButtonText.anchor.set(0.5, 0.5);
+            return _this;
+        }
+        GoalTutorialWindow.prototype.getFontStyles = function () {
+            return {
+                stroke: '#000',
+                strokeThickness: 12,
+                fill: '#fff',
+                font: '32px Comic Sans MS, Impact'
+            };
+        };
+        GoalTutorialWindow.prototype.getButtonFontStyle = function () {
+            return {
+                stroke: '#000',
+                strokeThickness: 8,
+                fill: '#fff',
+                font: '18px Comic Sans MS, Impact'
+            };
+        };
+        GoalTutorialWindow.prototype.getInstructionsFontStyle = function () {
+            return {
+                stroke: '#000',
+                strokeThickness: 8,
+                fill: '#fff',
+                font: '18px Comic Sans MS, Impact',
+                align: 'center',
+                boundsAlignH: "center", boundsAlignV: "middle"
+            };
+        };
+        return GoalTutorialWindow;
+    }(Phaser.Group));
+    exports.GoalTutorialWindow = GoalTutorialWindow;
+});
 /// <reference path="../../node_modules/phaser/typescript/phaser.d.ts" />
-define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hamster", "entities/cursor", "entities/bloodBurst", "entities/magicGlow", "entities/nextLevelWindows", "entities/nextLevelCounter", "entities/wobblingText", "entities/disapearingText", "entities/youLooseWindow"], function (require, exports, tiles_1, hamster_1, cursor_2, bloodBurst_1, magicGlow_1, nextLevelWindows_1, nextLevelCounter_1, wobblingText_2, disapearingText_1, youLooseWindow_1) {
+define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hamster", "entities/cursor", "entities/bloodBurst", "entities/magicGlow", "entities/nextLevelWindows", "entities/nextLevelCounter", "entities/wobblingText", "entities/disapearingText", "entities/youLooseWindow", "entities/deletionTutorialWindow", "entities/goalTutorialWindow"], function (require, exports, tiles_1, hamster_1, cursor_2, bloodBurst_1, magicGlow_1, nextLevelWindows_1, nextLevelCounter_1, wobblingText_2, disapearingText_1, youLooseWindow_1, deletionTutorialWindow_1, goalTutorialWindow_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var PlayerTileType;
@@ -496,13 +617,13 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                 15
             ];
             _this.levelLimits = [{
-                    ground: 30,
+                    ground: 20,
                     springs: 0
                 }, {
-                    ground: 30,
+                    ground: 25,
                     springs: 3
                 }, {
-                    ground: 30,
+                    ground: 25,
                     springs: 3
                 }, {
                     ground: 40,
@@ -551,13 +672,6 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             this.setupPlayerMap();
             this.setupPhysics();
             this.setupDeathSpace();
-            this.nextLevelCounter = new nextLevelCounter_1.NextLevelCounter(this.game, 3);
-            this.nextLevelCounter.onCounterFinish = function () {
-                _this.nextLevelCounter.destroy();
-                _this.cursor = new cursor_2.CursorEntity(_this.game);
-                _this.placeHamsterOnStart();
-                _this.setupTexts();
-            };
             var nextLevelHotKey = this.game.input.keyboard.addKey(Phaser.Keyboard.P);
             nextLevelHotKey.onDown.add(function () {
                 _this.setupNextLevel();
@@ -566,6 +680,25 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             this.selectTileSound = this.game.add.audio('select-tile');
             this.hamsterCounter = 0;
             this.deathCounter = 0;
+            this.notifyAboutGoal(function () {
+                _this.nextLevelCounter = new nextLevelCounter_1.NextLevelCounter(_this.game, 3);
+                _this.nextLevelCounter.onCounterFinish = function () {
+                    _this.nextLevelCounter.destroy();
+                    _this.cursor = new cursor_2.CursorEntity(_this.game);
+                    _this.placeHamsterOnStart();
+                    _this.setupTexts();
+                };
+            });
+        };
+        Gameplay.prototype.destroy = function () {
+            this.hamster.destroy();
+            this.hamsterCounterText.destroy();
+            this.deathCounterText.destroy();
+            this.sound.destroy();
+            this.groundButton.destroy();
+            this.groundText.destroy();
+            this.springButton.destroy();
+            this.springText.destroy();
         };
         Gameplay.prototype.setupTexts = function () {
             if (this.deathCounterText) {
@@ -788,6 +921,9 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
         };
         Gameplay.prototype.killHamster = function (noBlood) {
             var _this = this;
+            if (this.hamsterCounter === this.availableHamster[this.currentLevelIndex] + 1) {
+                return;
+            }
             var blood;
             if (!noBlood) {
                 blood = new bloodBurst_1.BloodBurstEntity(this.game, this.hamster.position.x + this.hamster.body.velocity.x * 0.15, this.hamster.position.y);
@@ -828,7 +964,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
         };
         Gameplay.prototype.saveHamster = function () {
             var _this = this;
-            var deathInfo = new disapearingText_1.DisapearingText(this.game, this.hamster.x, this.hamster.y, '+1 Saved', this.getFontStyles(), 3000);
+            var deathInfo = new disapearingText_1.DisapearingText(this.game, this.hamster.x, this.hamster.y, '+1 Rescued', this.getFontStyles(), 3000);
             this.game.time.events.add(Phaser.Timer.SECOND * 4, function () {
                 deathInfo.destroy();
             });
@@ -848,6 +984,12 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                     _this.killHamster();
                 }
             });
+            if (this.game.input.keyboard.isDown(Phaser.Keyboard.SHIFT)) {
+                this.cursor.enableDeleteMode();
+            }
+            else {
+                this.cursor.enableNormalMode();
+            }
             var currentLimits = this.levelLimits[this.currentLevelIndex];
             if (this.game.input.mousePointer.isDown) {
                 if (this.game.input.mousePointer.x > this.TILE_SIZE * 30) {
@@ -937,11 +1079,43 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
         Gameplay.prototype.notifyAboutLimit = function () {
             var _this = this;
             if (!this.limitReachedText) {
+                var deletionTutorial = JSON.parse(window.localStorage.getItem('deletion-tutorial'));
+                if (!deletionTutorial) {
+                    this.notifyAboutDeletionPossibility();
+                }
                 this.limitReachedText = new disapearingText_1.DisapearingText(this.game, this.input.mousePointer.x, this.input.mousePointer.y, 'Limit reached', this.getFontStyles(), 2000);
                 this.limitReachedText.onDestroy = function () {
                     _this.limitReachedText = undefined;
                 };
             }
+        };
+        Gameplay.prototype.notifyAboutDeletionPossibility = function () {
+            var _this = this;
+            var deletionTutorialWindow = new deletionTutorialWindow_1.DeletionTutorialWindow(this.game);
+            window.localStorage.setItem('deletion-tutorial', JSON.stringify(true));
+            this.game.physics.arcade.isPaused = true;
+            this.setupCursor();
+            deletionTutorialWindow.onOkClick = function () {
+                _this.game.physics.arcade.isPaused = false;
+                deletionTutorialWindow.destroy();
+            };
+        };
+        Gameplay.prototype.notifyAboutGoal = function (callback) {
+            var _this = this;
+            var goalTutorial = JSON.parse(window.localStorage.getItem('goal-tutorial'));
+            if (goalTutorial) {
+                callback();
+                return;
+            }
+            var goalTutorialWindow = new goalTutorialWindow_1.GoalTutorialWindow(this.game);
+            window.localStorage.setItem('goal-tutorial', JSON.stringify(true));
+            this.game.physics.arcade.isPaused = true;
+            this.setupCursor();
+            goalTutorialWindow.onOkClick = function () {
+                _this.game.physics.arcade.isPaused = false;
+                goalTutorialWindow.destroy();
+                callback();
+            };
         };
         Gameplay.prototype.render = function () {
             // this.game.debug.bodyInfo(this.hamster, 0, 0);
@@ -950,7 +1124,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                 this.deathCounterText.text = 'Dead  ' + this.deathCounter.toString();
             }
             if (this.savedCounterText) {
-                this.savedCounterText.text = 'Saved  ' + this.savedCounter.toString() + '/' + this.requiredSavesForNextLevel[this.currentLevelIndex];
+                this.savedCounterText.text = 'Rescued  ' + this.savedCounter.toString() + '/' + this.requiredSavesForNextLevel[this.currentLevelIndex];
             }
             if (this.hamsterCounterText) {
                 this.hamsterCounterText.text = 'Hamster  ' + (Math.min(this.availableHamster[this.currentLevelIndex] - this.hamsterCounter + 1, this.availableHamster[this.currentLevelIndex])).toString() + '/' + this.availableHamster[this.currentLevelIndex];
@@ -966,8 +1140,79 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
     }(Phaser.State));
     exports.Gameplay = Gameplay;
 });
+define("entities/hamsterRain", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var HamsterRain = /** @class */ (function (_super) {
+        __extends(HamsterRain, _super);
+        function HamsterRain(game) {
+            var _this = _super.call(this, game, -32, game.world.centerY) || this;
+            _this.game = game;
+            _this.height = game.world.height;
+            _this.width = 1;
+            _this.makeParticles('hamster');
+            _this.minParticleScale = 1;
+            _this.maxParticleScale = 2;
+            _this.alpha = 1;
+            _this.gravity = 0;
+            _this.setYSpeed(-5, 5);
+            _this.setXSpeed(100, 200);
+            _this.start(false, 15000, 500, 200);
+            return _this;
+        }
+        return HamsterRain;
+    }(Phaser.Particles.Arcade.Emitter));
+    exports.HamsterRain = HamsterRain;
+});
+/// <reference path="../../node_modules/phaser/typescript/phaser.d.ts" />
+define("states/win", ["require", "exports", "entities/wobblingText", "entities/cursor", "entities/hamsterRain"], function (require, exports, wobblingText_3, cursor_3, hamsterRain_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var Win = /** @class */ (function (_super) {
+        __extends(Win, _super);
+        function Win() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        Win.prototype.preload = function () {
+            this.game.stage.backgroundColor = 0xB20059;
+        };
+        Win.prototype.create = function () {
+            this.game.input.onTap.add(this.onTap, this);
+            this.background = this.game.add.image(this.game.world.centerX, this.game.world.centerY, 'background');
+            this.background.anchor.set(0.5);
+            this.background.scale.set(1.1);
+            this.hamsterRain = new hamsterRain_1.HamsterRain(this.game);
+            this.title = new wobblingText_3.WobblingText(this.game, this.game.world.centerX, this.game.world.centerY - 80, 'You win!', this.getFontStyles('120px'));
+            this.title.anchor.set(0.5);
+            this.clickToPlay = new wobblingText_3.WobblingText(this.game, this.game.world.centerX, this.game.world.centerY + 80, 'Click here to play again!', this.getFontStyles('60px'), 1000);
+            this.clickToPlay.anchor.set(0.5);
+            var cursor = new cursor_3.CursorEntity(this.game);
+        };
+        Win.prototype.onTap = function () {
+            this.game.state.start('Splash', true, false);
+        };
+        Win.prototype.getFontStyles = function (fontSize) {
+            return {
+                stroke: '#000',
+                strokeThickness: 12,
+                fill: '#fff',
+                font: fontSize + " Comic Sans MS, Impact"
+            };
+        };
+        Win.prototype.destroy = function () {
+            this.cursor.destroy();
+            this.clickToPlay.destroy();
+            this.title.destroy();
+            this.background.destroy();
+            this.bigHamster.destroy();
+            this.hamsterRain.destroy();
+        };
+        return Win;
+    }(Phaser.State));
+    exports.Win = Win;
+});
 /// <reference path="../node_modules/phaser/typescript/phaser.d.ts" />
-define("game", ["require", "exports", "states/boot", "states/preloader", "states/splash", "states/gameplay"], function (require, exports, boot_1, preloader_1, splash_1, gameplay_1) {
+define("game", ["require", "exports", "states/boot", "states/preloader", "states/splash", "states/gameplay", "states/win"], function (require, exports, boot_1, preloader_1, splash_1, gameplay_1, win_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Game = /** @class */ (function (_super) {
@@ -984,6 +1229,7 @@ define("game", ["require", "exports", "states/boot", "states/preloader", "states
             _this.state.add('Preloader', preloader_1.Preloader, false);
             _this.state.add('Splash', splash_1.Splash, false);
             _this.state.add('Gameplay', gameplay_1.Gameplay, false);
+            _this.state.add('Win', win_1.Win, false);
             _this.state.start('Boot');
             return _this;
         }
@@ -994,4 +1240,25 @@ define("game", ["require", "exports", "states/boot", "states/preloader", "states
         var game = new Game();
     }
     exports.default = bootGame;
+});
+define("entities/groundBurst", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var BloodBurstEntity = /** @class */ (function (_super) {
+        __extends(BloodBurstEntity, _super);
+        function BloodBurstEntity(game, x, y) {
+            var _this = _super.call(this, game) || this;
+            _this.game.add.existing(_this);
+            _this.makeParticles('ground-cell');
+            _this.gravity = -600;
+            _this.setAlpha(0.3, 0.8);
+            _this.setScale(0.5, 1);
+            _this.x = x;
+            _this.y = y;
+            _this.start(true, 500, null, 30);
+            return _this;
+        }
+        return BloodBurstEntity;
+    }(Phaser.Particles.Arcade.Emitter));
+    exports.BloodBurstEntity = BloodBurstEntity;
 });

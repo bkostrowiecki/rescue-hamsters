@@ -11,4 +11,12 @@ export class CursorEntity extends Phaser.Sprite {
         this.x = this.game.input.mousePointer.x - 8;
         this.y = this.game.input.mousePointer.y;
     }
+
+    enableDeleteMode() {
+        this.loadTexture('cursor-delete');
+    }
+
+    enableNormalMode() {
+        this.loadTexture('cursor');
+    }
 }
