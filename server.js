@@ -1,7 +1,7 @@
 // import our modules
 var nodeStatic 	= require( 'node-static' );	// used for serving static files
 var http		= require( 'http' );		// default node http server
-var port		= 5858;						// NOTE: this is the same port as specified in launch.json
+var port		= process.env.port || 5000;						// NOTE: this is the same port as specified in launch.json
 
 // create our file server config
 var file = new nodeStatic.Server( '', { 	// anything in the bin/ folder is served

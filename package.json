@@ -10,14 +10,14 @@
   "license": "UNLICENSED",
   "devDependencies": {
     "gulp": "^3.9.1",
-    "gulp-livereload": "^3.8.1",
-    "node-static": "^0.7.9"
+    "gulp-livereload": "^3.8.1"
   },
   "dependencies": {
     "phaser": "^2.6.2",
     "require": "^2.4.20",
     "requirejs": "^2.3.6",
     "tsc": "^1.20150623.0",
-    "typescript": "^3.6.3"
+    "typescript": "^3.6.3",
+    "node-static": "^0.7.9"
   }
 }

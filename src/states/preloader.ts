@@ -50,6 +50,17 @@ export class Preloader extends Phaser.State {
         this.game.load.spritesheet('button', 'bin/assets/button.png', 179, 62);
 
         this.game.load.audio('music', 'bin/assets/music.ogg');
+
+        this.game.load.audio('click-button', 'bin/assets/audio/click-button.ogg');
+        this.game.load.audio('block-limit', 'bin/assets/audio/block_limit.ogg');
+        this.game.load.audio('crash-hamster', 'bin/assets/audio/crush-hamster.ogg');
+        this.game.load.audio('appear-hamster', 'bin/assets/audio/appear_hamster.ogg');
+        this.game.load.audio('delete-block', 'bin/assets/audio/delete_block.ogg');
+        this.game.load.audio('win', 'bin/assets/audio/win.ogg');
+        this.game.load.audio('building', 'bin/assets/audio/building.ogg');
+        this.game.load.audio('jump', 'bin/assets/audio/jump.ogg');
+        this.game.load.audio('heartbeat', 'bin/assets/audio/heartbeat.ogg');
+        this.game.load.audio('rescued', 'bin/assets/audio/rescued.ogg');
     }
 
     create() {

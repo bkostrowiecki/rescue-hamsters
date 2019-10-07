@@ -152,6 +152,16 @@ export class Gameplay extends Phaser.State {
 
     private limitReachedText: DisapearingText;
 
+    private clickButtonSound: Phaser.Sound;
+    blockLimitSound: Phaser.Sound;
+    crashHamsterSound: Phaser.Sound;
+    appearHammsterSound: Phaser.Sound;
+    deleteBlockSound: Phaser.Sound;
+    winSound: Phaser.Sound;
+    buildingSound: Phaser.Sound;
+    jumpSound: Phaser.Sound;
+    rescuedSound: Phaser.Sound;
+
     preload() {}
 
     private generateCsvMapFromArray() {
@@ -232,6 +242,16 @@ export class Gameplay extends Phaser.State {
         this.playerTileIndicator = this.game.add.sprite(-200, -200, 'magic-glow-particle');
         this.playerTileIndicator.scale.set(3);
         this.playerTileIndicator.anchor.set(0.5, 0.5);
+
+        this.clickButtonSound = this.game.add.sound('click-button');
+        this.blockLimitSound = this.game.add.sound('block-limit');
+        this.crashHamsterSound = this.game.add.sound('crash-hamster');
+        this.appearHammsterSound = this.game.add.sound('appear-hamster');
+        this.deleteBlockSound = this.game.add.sound('delete-block');
+        this.winSound = this.game.add.sound('click-button');
+        this.buildingSound = this.game.add.sound('building');
+        this.jumpSound = this.game.add.sound('jump');
+        this.rescuedSound = this.game.add.sound('rescued');
     }
 
     destroy() {
@@ -323,6 +343,7 @@ export class Gameplay extends Phaser.State {
                 if (sprite instanceof HamsterEntity) {
                     const hammsterBody = sprite.body as Phaser.Physics.Arcade.Body;
                     hammsterBody.velocity.set(hammsterBody.velocity.x, -600);
+                    this.jumpSound.play()
                 }
             },
             this
@@ -432,6 +453,7 @@ export class Gameplay extends Phaser.State {
                     // this.killHamster();
                 } else {
                     this.saveHamster();
+                    this.rescuedSound.play();
                 }
             },
             this
@@ -517,8 +539,10 @@ export class Gameplay extends Phaser.State {
         );
 
         (this.game.physics.arcade as any).isPaused = true;
+        this.winSound.play(undefined, undefined, 0.4);
 
         this.nextLevelWindow.onNextLevelClick = () => {
+            this.clickButtonSound.play();
             this.nextLevelWindow.destroy();
             (this.game.physics.arcade as any).isPaused = false;
 
@@ -643,6 +667,8 @@ export class Gameplay extends Phaser.State {
         this.hamster.physicsEnabled = false;
         this.hamster.kill();
 
+        this.crashHamsterSound.play();
+
         if (this.hamsterCounter === this.availableHamster[this.currentLevelIndex]) {
             this.youLooseWindow = new YouLooseWindow(this.game, this.requiredSavesForNextLevel[this.currentLevelIndex]);
 
@@ -651,6 +677,8 @@ export class Gameplay extends Phaser.State {
             this.hamsterCounter = this.availableHamster[this.currentLevelIndex] + 1;
 
             this.youLooseWindow.onRetryClick = () => {
+                this.clickButtonSound.play();
+
                 this.setupCurrentLevel();
 
                 this.youLooseWindow.destroy();
@@ -675,6 +703,7 @@ export class Gameplay extends Phaser.State {
     }
 
     private saveLastHamster() {
+        this.rescuedSound.play(undefined, undefined, 1.3);
         this.hamster.position.set(-200, -200);
         this.hamster.physicsEnabled = false;
         this.hamster.kill();
@@ -690,7 +719,7 @@ export class Gameplay extends Phaser.State {
         this.hamster.physicsEnabled = false;
         this.hamster.kill();
 
-        this.game.time.events.add(Phaser.Timer.SECOND * 0.5, () => {
+        this.game.time.events.add(Phaser.Timer.SECOND * 3, () => {
             this.placeHamsterOnStart();
         });
     }
@@ -743,6 +772,7 @@ export class Gameplay extends Phaser.State {
 
         if (this.shouldRevive) {
             this.hamster.revive();
+            this.appearHammsterSound.play();
             this.hamsterCounter++;
             this.shouldRevive = false;
         }
@@ -771,6 +801,7 @@ export class Gameplay extends Phaser.State {
 
         if (thisTile) {
             const groundBurst = new GroundBurstEntity(this.game, this.game.input.mousePointer.x, this.game.input.mousePointer.y);
+            this.deleteBlockSound.play(undefined, undefined, 0.4);
             this.game.time.events.add(3000, () => {
                 groundBurst.destroy();
             });
@@ -846,6 +877,8 @@ export class Gameplay extends Phaser.State {
             this.playerMapLayer
         );
 
+        this.buildingSound.play();
+
         this.groundTilesNumber++;
     }
 
@@ -887,6 +920,8 @@ export class Gameplay extends Phaser.State {
         );
 
         this.springTilesNumber++;
+
+        this.buildingSound.play(undefined, undefined, 0.4);
     }
 
     private returnTileInType(thisTile) {
@@ -913,6 +948,8 @@ export class Gameplay extends Phaser.State {
             this.limitReachedText.onDestroy = () => {
                 this.limitReachedText = undefined;
             }
+
+            this.blockLimitSound.play();
         }
     }
 
@@ -926,6 +963,7 @@ export class Gameplay extends Phaser.State {
         this.setupCursor();
 
         deletionTutorialWindow.onOkClick = () => {
+            this.clickButtonSound.play();
             (this.game.physics.arcade as any).isPaused = false;
             deletionTutorialWindow.destroy();
         };
@@ -950,6 +988,7 @@ export class Gameplay extends Phaser.State {
         goalTutorialWindow.onOkClick = () => {
             (this.game.physics.arcade as any).isPaused = false;
             goalTutorialWindow.destroy();
+            this.clickButtonSound.play();
             callback();
         };
     }

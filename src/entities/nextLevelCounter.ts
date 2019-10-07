@@ -6,12 +6,16 @@ export class NextLevelCounter extends Phaser.Group {
 
     private counterTimer: Phaser.TimerEvent;
 
+    private heartbeat: Phaser.Sound;
+
     constructor(game: Phaser.Game, initialTimeInSeconds: number) {
         super(game);
 
         this.counter = initialTimeInSeconds;
 
         this.game.add.existing(this);
+
+        this.heartbeat = this.game.add.sound('heartbeat');
 
         this.counterText = this.game.add.text(this.game.world.width / 2, this.game.world.height / 2, initialTimeInSeconds.toString(), this.getFontStyles());
         this.counterText.anchor.set(0.5, 0.5);
@@ -31,9 +35,14 @@ export class NextLevelCounter extends Phaser.Group {
 
             this.counterText.setText(this.counter.toString());
 
+            if (this.counter >= 0) {
+                this.heartbeat.play();
+            }
+
             if (this.counter === 0) {
                 this.counterText.setText('Go!');
             } else if (this.counter === -1) {
+                this.heartbeat.stop();
                 this.onCounterFinish();
             }
         }, this);

@@ -80,6 +80,16 @@ define("states/preloader", ["require", "exports"], function (require, exports) {
             this.game.load.audio('select-tile', 'bin/assets/select-tile.ogg');
             this.game.load.spritesheet('button', 'bin/assets/button.png', 179, 62);
             this.game.load.audio('music', 'bin/assets/music.ogg');
+            this.game.load.audio('click-button', 'bin/assets/audio/click-button.ogg');
+            this.game.load.audio('block-limit', 'bin/assets/audio/block_limit.ogg');
+            this.game.load.audio('crash-hamster', 'bin/assets/audio/crush-hamster.ogg');
+            this.game.load.audio('appear-hamster', 'bin/assets/audio/appear_hamster.ogg');
+            this.game.load.audio('delete-block', 'bin/assets/audio/delete_block.ogg');
+            this.game.load.audio('win', 'bin/assets/audio/win.ogg');
+            this.game.load.audio('building', 'bin/assets/audio/building.ogg');
+            this.game.load.audio('jump', 'bin/assets/audio/jump.ogg');
+            this.game.load.audio('heartbeat', 'bin/assets/audio/heartbeat.ogg');
+            this.game.load.audio('rescued', 'bin/assets/audio/rescued.ogg');
         };
         Preloader.prototype.create = function () {
             var tween = this.add.tween(this.preloaderBar).to({
@@ -358,6 +368,7 @@ define("entities/nextLevelCounter", ["require", "exports"], function (require, e
             var _this = _super.call(this, game) || this;
             _this.counter = initialTimeInSeconds;
             _this.game.add.existing(_this);
+            _this.heartbeat = _this.game.add.sound('heartbeat');
             _this.counterText = _this.game.add.text(_this.game.world.width / 2, _this.game.world.height / 2, initialTimeInSeconds.toString(), _this.getFontStyles());
             _this.counterText.anchor.set(0.5, 0.5);
             _this.add(_this.counterText);
@@ -371,10 +382,14 @@ define("entities/nextLevelCounter", ["require", "exports"], function (require, e
             _this.counterTimer = _this.game.time.events.loop(Phaser.Timer.SECOND, function () {
                 _this.counter--;
                 _this.counterText.setText(_this.counter.toString());
+                if (_this.counter >= 0) {
+                    _this.heartbeat.play();
+                }
                 if (_this.counter === 0) {
                     _this.counterText.setText('Go!');
                 }
                 else if (_this.counter === -1) {
+                    _this.heartbeat.stop();
                     _this.onCounterFinish();
                 }
             }, _this);
@@ -743,6 +758,15 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             this.playerTileIndicator = this.game.add.sprite(-200, -200, 'magic-glow-particle');
             this.playerTileIndicator.scale.set(3);
             this.playerTileIndicator.anchor.set(0.5, 0.5);
+            this.clickButtonSound = this.game.add.sound('click-button');
+            this.blockLimitSound = this.game.add.sound('block-limit');
+            this.crashHamsterSound = this.game.add.sound('crash-hamster');
+            this.appearHammsterSound = this.game.add.sound('appear-hamster');
+            this.deleteBlockSound = this.game.add.sound('delete-block');
+            this.winSound = this.game.add.sound('click-button');
+            this.buildingSound = this.game.add.sound('building');
+            this.jumpSound = this.game.add.sound('jump');
+            this.rescuedSound = this.game.add.sound('rescued');
         };
         Gameplay.prototype.destroy = function () {
             this.hamster.destroy();
@@ -797,6 +821,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             this.game.world.setBounds(0, 0, this.TILE_SIZE * 30, this.TILE_SIZE * 20);
         };
         Gameplay.prototype.setupPlayerMap = function () {
+            var _this = this;
             this.playerMap = this.game.add.tilemap('dynamicMap', this.TILE_SIZE, this.TILE_SIZE);
             this.playerMap.addTilesetImage('tiles', 'tiles', this.TILE_SIZE, this.TILE_SIZE);
             this.playerMapLayer = this.playerMap.createLayer(0);
@@ -805,6 +830,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                 if (sprite instanceof hamster_1.HamsterEntity) {
                     var hammsterBody = sprite.body;
                     hammsterBody.velocity.set(hammsterBody.velocity.x, -600);
+                    _this.jumpSound.play();
                 }
             }, this);
             this.activateTilesBasedOnAvalability();
@@ -880,6 +906,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                 }
                 else {
                     _this.saveHamster();
+                    _this.rescuedSound.play();
                 }
             }, this);
             this.predefinedMap.setTileIndexCallback(tiles_1.PredefinedTiles.IVY_MIDDLE, function () {
@@ -932,7 +959,9 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             var _this = this;
             this.nextLevelWindow = new nextLevelWindows_1.NextLevelWindow(this.game, this.savedCounter, this.deathCounter);
             this.game.physics.arcade.isPaused = true;
+            this.winSound.play(undefined, undefined, 0.4);
             this.nextLevelWindow.onNextLevelClick = function () {
+                _this.clickButtonSound.play();
                 _this.nextLevelWindow.destroy();
                 _this.game.physics.arcade.isPaused = false;
                 _this.savedCounter = 0;
@@ -1022,11 +1051,13 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             this.hamster.position.set(-200, -200);
             this.hamster.physicsEnabled = false;
             this.hamster.kill();
+            this.crashHamsterSound.play();
             if (this.hamsterCounter === this.availableHamster[this.currentLevelIndex]) {
                 this.youLooseWindow = new youLooseWindow_1.YouLooseWindow(this.game, this.requiredSavesForNextLevel[this.currentLevelIndex]);
                 this.setupCursor();
                 this.hamsterCounter = this.availableHamster[this.currentLevelIndex] + 1;
                 this.youLooseWindow.onRetryClick = function () {
+                    _this.clickButtonSound.play();
                     _this.setupCurrentLevel();
                     _this.youLooseWindow.destroy();
                     _this.youLooseWindow = undefined;
@@ -1045,6 +1076,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             this.deathCounter++;
         };
         Gameplay.prototype.saveLastHamster = function () {
+            this.rescuedSound.play(undefined, undefined, 1.3);
             this.hamster.position.set(-200, -200);
             this.hamster.physicsEnabled = false;
             this.hamster.kill();
@@ -1058,7 +1090,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             this.hamster.position.set(-200, -200);
             this.hamster.physicsEnabled = false;
             this.hamster.kill();
-            this.game.time.events.add(Phaser.Timer.SECOND * 0.5, function () {
+            this.game.time.events.add(Phaser.Timer.SECOND * 3, function () {
                 _this.placeHamsterOnStart();
             });
         };
@@ -1101,6 +1133,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             }
             if (this.shouldRevive) {
                 this.hamster.revive();
+                this.appearHammsterSound.play();
                 this.hamsterCounter++;
                 this.shouldRevive = false;
             }
@@ -1121,6 +1154,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             var thisTile = this.playerMap.getTileWorldXY(this.game.input.mousePointer.x, this.game.input.mousePointer.y);
             if (thisTile) {
                 var groundBurst_2 = new groundBurst_1.GroundBurstEntity(this.game, this.game.input.mousePointer.x, this.game.input.mousePointer.y);
+                this.deleteBlockSound.play(undefined, undefined, 0.4);
                 this.game.time.events.add(3000, function () {
                     groundBurst_2.destroy();
                 });
@@ -1153,6 +1187,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                 this.playerMap.putTileWorldXY(tiles_1.PlayerTiles.MIDDLE_GROUND, tileBelow.worldX, tileBelow.worldY, this.TILE_SIZE, this.TILE_SIZE);
             }
             this.playerMap.putTileWorldXY(tileTypeToPlace, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.playerMapLayer);
+            this.buildingSound.play();
             this.groundTilesNumber++;
         };
         Gameplay.prototype.checkIfPlayerCanPlaceTile = function () {
@@ -1172,6 +1207,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             this.returnTileInType(thisTile);
             this.playerMap.putTileWorldXY(tileTypeToPlace, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.playerMapLayer);
             this.springTilesNumber++;
+            this.buildingSound.play(undefined, undefined, 0.4);
         };
         Gameplay.prototype.returnTileInType = function (thisTile) {
             if (thisTile == null) {
@@ -1195,6 +1231,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                 this.limitReachedText.onDestroy = function () {
                     _this.limitReachedText = undefined;
                 };
+                this.blockLimitSound.play();
             }
         };
         Gameplay.prototype.notifyAboutDeletionPossibility = function () {
@@ -1204,6 +1241,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             this.game.physics.arcade.isPaused = true;
             this.setupCursor();
             deletionTutorialWindow.onOkClick = function () {
+                _this.clickButtonSound.play();
                 _this.game.physics.arcade.isPaused = false;
                 deletionTutorialWindow.destroy();
             };
@@ -1222,6 +1260,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             goalTutorialWindow.onOkClick = function () {
                 _this.game.physics.arcade.isPaused = false;
                 goalTutorialWindow.destroy();
+                _this.clickButtonSound.play();
                 callback();
             };
         };
@@ -1288,6 +1327,7 @@ define("states/win", ["require", "exports", "entities/wobblingText", "entities/c
         };
         Win.prototype.create = function () {
             this.game.world.setBounds(0, 0, 32 * 32, 32 * 20);
+            this.winSound = this.game.add.sound('win', 0.5);
             this.game.input.onTap.add(this.onTap, this);
             this.background = this.game.add.image(this.game.world.centerX, this.game.world.centerY, 'background');
             this.background.anchor.set(0.5);
@@ -1300,6 +1340,7 @@ define("states/win", ["require", "exports", "entities/wobblingText", "entities/c
             this.clickToPlay = new wobblingText_3.WobblingText(this.game, this.game.world.centerX, this.game.world.centerY + 150, 'Click here to play again!', this.getFontStyles('20px'), 1000);
             this.clickToPlay.anchor.set(0.5);
             this.cursor = new cursor_3.CursorEntity(this.game);
+            this.winSound.play();
         };
         Win.prototype.onTap = function () {
             this.game.state.start('Splash', true, false);

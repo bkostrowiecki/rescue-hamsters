@@ -13,6 +13,7 @@ export class Win extends Phaser.State {
     private score: Phaser.Text;
 
     private hamsterRain: HamsterRain;
+    private winSound: Phaser.Sound;
 
     preload() {
         this.game.stage.backgroundColor = 0xB20059;
@@ -25,6 +26,8 @@ export class Win extends Phaser.State {
             32 * 32,
             32 * 20
         );
+
+        this.winSound = this.game.add.sound('win', 0.5);
     
         this.game.input.onTap.add(this.onTap, this);
 
@@ -49,6 +52,8 @@ died in the process!`, this.getFontStyles('40px'));
         this.clickToPlay.anchor.set(0.5);
 
         this.cursor = new CursorEntity(this.game);
+
+        this.winSound.play();
     }
 
     onTap() {
