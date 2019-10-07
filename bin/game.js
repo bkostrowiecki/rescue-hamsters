@@ -582,6 +582,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
     (function (PlayerTileType) {
         PlayerTileType[PlayerTileType["GROUND"] = 0] = "GROUND";
         PlayerTileType[PlayerTileType["SPRING"] = 1] = "SPRING";
+        PlayerTileType[PlayerTileType["HAMMER"] = 2] = "HAMMER";
     })(PlayerTileType = exports.PlayerTileType || (exports.PlayerTileType = {}));
     var Gameplay = /** @class */ (function (_super) {
         __extends(Gameplay, _super);
@@ -718,8 +719,15 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             this.hamsterCounterText.anchor.set(0.5, 0.5);
         };
         Gameplay.prototype.placeHamsterOnStart = function () {
+            var _this = this;
             if (!this.hamster) {
                 this.hamster = new hamster_1.HamsterEntity(this.game);
+                this.hamster.inputEnabled = true;
+                this.hamster.events.onInputDown.add(function () {
+                    if (_this.currentTile === PlayerTileType.HAMMER) {
+                        _this.killHamster();
+                    }
+                });
             }
             this.hamster.physicsEnabled = true;
             this.hamster.body.velocity.y = 0;
@@ -848,6 +856,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             var currentLevel = this.levels[this.currentLevelIndex];
             if (currentLevel === 'level-01') {
                 this.activateGroundTile();
+                this.activateHammerTile();
             }
             if (currentLevel === 'level-02') {
                 this.activateSpringTile();
@@ -894,6 +903,23 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             }, this);
             this.groundText = new wobblingText_2.WobblingText(this.game, this.groundButton.x, this.groundButton.y + this.TILE_SIZE, '0', this.getTileCounterFontStyle());
             this.groundText.anchor.set(0.5, 0.5);
+        };
+        Gameplay.prototype.activateHammerTile = function () {
+            var _this = this;
+            this.hammerKey = this.game.input.keyboard.addKey(Phaser.Keyboard.ONE);
+            this.hammerKey.onDown.add(function () {
+                _this.currentTile = PlayerTileType.HAMMER;
+            }, this);
+            this.hammerButton = this.game.add.sprite(this.game.canvas.width - this.TILE_SIZE / 2, this.TILE_SIZE * 4.5, 'tiles-sheet');
+            this.hammerButton.frame = 3;
+            this.hammerButton.inputEnabled = true;
+            this.hammerButton.anchor.set(1, 0);
+            this.hammerButton.events.onInputDown.add(function () {
+                _this.currentTile = PlayerTileType.HAMMER;
+                _this.selectTileSound.play();
+            }, this);
+            this.hammerText = new wobblingText_2.WobblingText(this.game, this.hammerButton.x, this.hammerButton.y + this.TILE_SIZE, '∞', this.getTileCounterFontStyle());
+            this.hammerText.anchor.set(0.5, 0.5);
         };
         Gameplay.prototype.activateSpringTile = function () {
             var _this = this;
@@ -995,11 +1021,14 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                 if (this.game.input.mousePointer.x > this.TILE_SIZE * 30) {
                     return;
                 }
+                if (this.game.input.keyboard.isDown(Phaser.Keyboard.SHIFT)) {
+                    this.deletePlayerTile();
+                    return;
+                }
                 if (!this.checkIfPlayerCanPlaceTile()) {
                     return;
                 }
-                if (this.game.input.keyboard.isDown(Phaser.Keyboard.SHIFT)) {
-                    this.deletePlayerTile();
+                if (this.currentTile === PlayerTileType.HAMMER) {
                     return;
                 }
                 if (this.currentTile === PlayerTileType.GROUND) {
@@ -1184,9 +1213,11 @@ define("states/win", ["require", "exports", "entities/wobblingText", "entities/c
             this.hamsterRain = new hamsterRain_1.HamsterRain(this.game);
             this.title = new wobblingText_3.WobblingText(this.game, this.game.world.centerX, this.game.world.centerY - 80, 'You win!', this.getFontStyles('120px'));
             this.title.anchor.set(0.5);
+            this.score = new wobblingText_3.WobblingText(this.game, this.game.world.centerX, this.game.world.centerY, "Only " +  + " died in the process", this.getFontStyles('80px'));
+            this.score.anchor.set(0.5);
             this.clickToPlay = new wobblingText_3.WobblingText(this.game, this.game.world.centerX, this.game.world.centerY + 80, 'Click here to play again!', this.getFontStyles('60px'), 1000);
             this.clickToPlay.anchor.set(0.5);
-            var cursor = new cursor_3.CursorEntity(this.game);
+            this.cursor = new cursor_3.CursorEntity(this.game);
         };
         Win.prototype.onTap = function () {
             this.game.state.start('Splash', true, false);

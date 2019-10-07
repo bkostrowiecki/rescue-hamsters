@@ -15,7 +15,8 @@ import { GoalTutorialWindow } from '../entities/goalTutorialWindow';
 
 export enum PlayerTileType {
     GROUND,
-    SPRING
+    SPRING,
+    HAMMER
 }
 
 export class Gameplay extends Phaser.State {
@@ -36,9 +37,11 @@ export class Gameplay extends Phaser.State {
 
     private groundKey: Phaser.Key;
     private springKey: Phaser.Key;
+    private hammerKey: Phaser.Key;
 
     private groundButton: Phaser.Sprite;
     private springButton: Phaser.Sprite;
+    private hammerButton: Phaser.Sprite;
 
     private startPoint: Phaser.Point;
     private startMagicGlow: MagicGlowEntity;
@@ -118,6 +121,7 @@ export class Gameplay extends Phaser.State {
 
     private groundText: WobblingText;
     private springText: WobblingText;
+    private hammerText: WobblingText;
 
     private limitReachedText: DisapearingText;
 
@@ -171,8 +175,6 @@ export class Gameplay extends Phaser.State {
         this.setupPhysics();
 
         this.setupDeathSpace();
-
-        
 
         const nextLevelHotKey = this.game.input.keyboard.addKey(
             Phaser.Keyboard.P
@@ -236,6 +238,12 @@ export class Gameplay extends Phaser.State {
     private placeHamsterOnStart() {
         if (!this.hamster) {
             this.hamster = new HamsterEntity(this.game);
+            this.hamster.inputEnabled = true;
+            this.hamster.events.onInputDown.add(() => {
+                if (this.currentTile === PlayerTileType.HAMMER) {
+                    this.killHamster();
+                }
+            });
         }
         this.hamster.physicsEnabled = true;
         this.hamster.body.velocity.y = 0;
@@ -444,6 +452,7 @@ export class Gameplay extends Phaser.State {
         const currentLevel = this.levels[this.currentLevelIndex];
         if (currentLevel === 'level-01') {
             this.activateGroundTile();
+            this.activateHammerTile();
         }
 
         if (currentLevel === 'level-02') {
@@ -512,6 +521,31 @@ export class Gameplay extends Phaser.State {
 
         this.groundText = new WobblingText(this.game, this.groundButton.x, this.groundButton.y + this.TILE_SIZE, '0', this.getTileCounterFontStyle());
         this.groundText.anchor.set(0.5, 0.5);
+    }
+
+    private activateHammerTile() {
+        this.hammerKey = this.game.input.keyboard.addKey(
+            Phaser.Keyboard.ONE
+        );
+        this.hammerKey.onDown.add(() => {
+            this.currentTile = PlayerTileType.HAMMER;
+        }, this);
+
+        this.hammerButton = this.game.add.sprite(
+            this.game.canvas.width - this.TILE_SIZE / 2,
+            this.TILE_SIZE * 4.5,
+            'tiles-sheet'
+        );
+        this.hammerButton.frame = 3;
+        this.hammerButton.inputEnabled = true;
+        this.hammerButton.anchor.set(1, 0);
+        this.hammerButton.events.onInputDown.add(() => {
+            this.currentTile = PlayerTileType.HAMMER;
+            this.selectTileSound.play();
+        }, this);
+
+        this.hammerText = new WobblingText(this.game, this.hammerButton.x, this.hammerButton.y + this.TILE_SIZE, '∞', this.getTileCounterFontStyle());
+        this.hammerText.anchor.set(0.5, 0.5);
     }
 
     private activateSpringTile() {
@@ -643,12 +677,16 @@ export class Gameplay extends Phaser.State {
                 return;
             }
 
+            if (this.game.input.keyboard.isDown(Phaser.Keyboard.SHIFT)) {
+                this.deletePlayerTile();
+                return;
+            }
+
             if (!this.checkIfPlayerCanPlaceTile()) {
                 return;
             }
 
-            if (this.game.input.keyboard.isDown(Phaser.Keyboard.SHIFT)) {
-                this.deletePlayerTile();
+            if (this.currentTile === PlayerTileType.HAMMER) {
                 return;
             }
 

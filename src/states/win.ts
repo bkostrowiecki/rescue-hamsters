@@ -40,7 +40,7 @@ export class Win extends Phaser.State {
         this.clickToPlay = new WobblingText(this.game, this.game.world.centerX, this.game.world.centerY + 80, 'Click here to play again!', this.getFontStyles('60px'), 1000);
         this.clickToPlay.anchor.set(0.5);
 
-        const cursor = new CursorEntity(this.game);
+        this.cursor = new CursorEntity(this.game);
     }
 
     onTap() {
