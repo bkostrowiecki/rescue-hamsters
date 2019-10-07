@@ -40,6 +40,10 @@ export class Preloader extends Phaser.State {
         this.game.load.tilemap('level-04', 'bin/assets/level04.csv');
         this.game.load.tilemap('level-05', 'bin/assets/level05.csv');
         this.game.load.tilemap('level-06', 'bin/assets/level06.csv');
+        this.game.load.tilemap('level-07', 'bin/assets/level07.csv');
+        this.game.load.tilemap('level-08', 'bin/assets/level08.csv');
+        this.game.load.tilemap('level-09', 'bin/assets/level09.csv');
+        this.game.load.tilemap('level-10', 'bin/assets/level10.csv');
 
         this.game.load.audio('select-tile', 'bin/assets/select-tile.ogg');
 

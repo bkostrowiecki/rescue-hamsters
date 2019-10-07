@@ -67,11 +67,15 @@ export class Gameplay extends Phaser.State {
 
     private levels = [
         'level-01',
-        // 'level-02',
-        // 'level-03',
-        // 'level-04',
-        // 'level-05',
-        // 'level-06'
+        'level-02',
+        'level-03',
+        'level-04',
+        'level-05',
+        'level-06',
+        'level-07',
+        'level-08',
+        'level-09',
+        'level-10'
     ];
 
     private requiredSavesForNextLevel = [
@@ -79,6 +83,10 @@ export class Gameplay extends Phaser.State {
         2,
         3,
         3,
+        3,
+        5,
+        5,
+        5,
         3,
         5
     ];
@@ -89,7 +97,11 @@ export class Gameplay extends Phaser.State {
         5,
         5,
         15,
-        15
+        15,
+        20,
+        20,
+        30,
+        30
     ];
 
     private levelLimits = [{
@@ -105,11 +117,23 @@ export class Gameplay extends Phaser.State {
         ground: 40,
         springs: 4
     }, {
-        ground: 60,
+        ground: 40,
+        springs: 5
+    }, {
+        ground: 50,
         springs: 5
     }, {
         ground: 60,
         springs: 5
+    }, {
+        ground: 25,
+        springs: 3
+    } , {
+        ground: 25,
+        springs: 0
+    }, {
+        ground: 100,
+        springs: 8
     }];
 
     private currentLevelIndex = 0;
@@ -492,8 +516,11 @@ export class Gameplay extends Phaser.State {
             this.deathCounter
         );
 
+        (this.game.physics.arcade as any).isPaused = true;
+
         this.nextLevelWindow.onNextLevelClick = () => {
             this.nextLevelWindow.destroy();
+            (this.game.physics.arcade as any).isPaused = false;
 
             this.savedCounter = 0;
             this.setupNextLevel();

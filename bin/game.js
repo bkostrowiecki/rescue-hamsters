@@ -73,6 +73,10 @@ define("states/preloader", ["require", "exports"], function (require, exports) {
             this.game.load.tilemap('level-04', 'bin/assets/level04.csv');
             this.game.load.tilemap('level-05', 'bin/assets/level05.csv');
             this.game.load.tilemap('level-06', 'bin/assets/level06.csv');
+            this.game.load.tilemap('level-07', 'bin/assets/level07.csv');
+            this.game.load.tilemap('level-08', 'bin/assets/level08.csv');
+            this.game.load.tilemap('level-09', 'bin/assets/level09.csv');
+            this.game.load.tilemap('level-10', 'bin/assets/level10.csv');
             this.game.load.audio('select-tile', 'bin/assets/select-tile.ogg');
             this.game.load.spritesheet('button', 'bin/assets/button.png', 179, 62);
             this.game.load.audio('music', 'bin/assets/music.ogg');
@@ -617,12 +621,25 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             _this.savedCounter = 0;
             _this.levels = [
                 'level-01',
+                'level-02',
+                'level-03',
+                'level-04',
+                'level-05',
+                'level-06',
+                'level-07',
+                'level-08',
+                'level-09',
+                'level-10'
             ];
             _this.requiredSavesForNextLevel = [
                 1,
                 2,
                 3,
                 3,
+                3,
+                5,
+                5,
+                5,
                 3,
                 5
             ];
@@ -632,7 +649,11 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                 5,
                 5,
                 15,
-                15
+                15,
+                20,
+                20,
+                30,
+                30
             ];
             _this.levelLimits = [{
                     ground: 20,
@@ -647,11 +668,23 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
                     ground: 40,
                     springs: 4
                 }, {
-                    ground: 60,
+                    ground: 40,
+                    springs: 5
+                }, {
+                    ground: 50,
                     springs: 5
                 }, {
                     ground: 60,
                     springs: 5
+                }, {
+                    ground: 25,
+                    springs: 3
+                }, {
+                    ground: 25,
+                    springs: 0
+                }, {
+                    ground: 100,
+                    springs: 8
                 }];
             _this.currentLevelIndex = 0;
             _this.groundTilesNumber = 0;
@@ -898,8 +931,10 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
         Gameplay.prototype.finishLevel = function () {
             var _this = this;
             this.nextLevelWindow = new nextLevelWindows_1.NextLevelWindow(this.game, this.savedCounter, this.deathCounter);
+            this.game.physics.arcade.isPaused = true;
             this.nextLevelWindow.onNextLevelClick = function () {
                 _this.nextLevelWindow.destroy();
+                _this.game.physics.arcade.isPaused = false;
                 _this.savedCounter = 0;
                 _this.setupNextLevel();
             };
