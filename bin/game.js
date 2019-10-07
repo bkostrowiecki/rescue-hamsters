@@ -63,6 +63,7 @@ define("states/preloader", ["require", "exports"], function (require, exports) {
             this.game.load.image('background', 'bin/assets/landscape.png');
             this.game.load.image('frame', 'bin/assets/frame.png');
             this.game.load.image('blood-cell', 'bin/assets/blood-cell.png');
+            this.game.load.image('ground-cell', 'bin/assets/ground-cell.png');
             this.game.load.image('magic-glow-particle', 'bin/assets/magic-glow-particle.png');
             this.game.load.image('next-level-window', 'bin/assets/next-level-window.png');
             this.game.load.image('mask', 'bin/assets/mask.png');
@@ -574,8 +575,29 @@ define("entities/goalTutorialWindow", ["require", "exports"], function (require,
     }(Phaser.Group));
     exports.GoalTutorialWindow = GoalTutorialWindow;
 });
+define("entities/groundBurst", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var GroundBurstEntity = /** @class */ (function (_super) {
+        __extends(GroundBurstEntity, _super);
+        function GroundBurstEntity(game, x, y) {
+            var _this = _super.call(this, game) || this;
+            _this.game.add.existing(_this);
+            _this.makeParticles('ground-cell');
+            _this.gravity = -600;
+            _this.setAlpha(0.3, 0.8);
+            _this.setScale(0.5, 1);
+            _this.x = x;
+            _this.y = y;
+            _this.start(true, 500, null, 30);
+            return _this;
+        }
+        return GroundBurstEntity;
+    }(Phaser.Particles.Arcade.Emitter));
+    exports.GroundBurstEntity = GroundBurstEntity;
+});
 /// <reference path="../../node_modules/phaser/typescript/phaser.d.ts" />
-define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hamster", "entities/cursor", "entities/bloodBurst", "entities/magicGlow", "entities/nextLevelWindows", "entities/nextLevelCounter", "entities/wobblingText", "entities/disapearingText", "entities/youLooseWindow", "entities/deletionTutorialWindow", "entities/goalTutorialWindow"], function (require, exports, tiles_1, hamster_1, cursor_2, bloodBurst_1, magicGlow_1, nextLevelWindows_1, nextLevelCounter_1, wobblingText_2, disapearingText_1, youLooseWindow_1, deletionTutorialWindow_1, goalTutorialWindow_1) {
+define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hamster", "entities/cursor", "entities/bloodBurst", "entities/magicGlow", "entities/nextLevelWindows", "entities/nextLevelCounter", "entities/wobblingText", "entities/disapearingText", "entities/youLooseWindow", "entities/deletionTutorialWindow", "entities/goalTutorialWindow", "entities/groundBurst"], function (require, exports, tiles_1, hamster_1, cursor_2, bloodBurst_1, magicGlow_1, nextLevelWindows_1, nextLevelCounter_1, wobblingText_2, disapearingText_1, youLooseWindow_1, deletionTutorialWindow_1, goalTutorialWindow_1, groundBurst_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var PlayerTileType;
@@ -1046,6 +1068,12 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
         };
         Gameplay.prototype.deletePlayerTile = function () {
             var thisTile = this.playerMap.getTileWorldXY(this.game.input.mousePointer.x, this.game.input.mousePointer.y);
+            if (thisTile) {
+                var groundBurst_2 = new groundBurst_1.GroundBurstEntity(this.game, this.game.input.mousePointer.x, this.game.input.mousePointer.y);
+                this.game.time.events.add(3000, function () {
+                    groundBurst_2.destroy();
+                });
+            }
             this.returnTileInType(thisTile);
             this.playerMap.putTileWorldXY(tiles_1.PlayerTiles.NONE, this.game.input.mousePointer.x, this.game.input.mousePointer.y, this.TILE_SIZE, this.TILE_SIZE, this.playerMapLayer);
         };
@@ -1164,6 +1192,7 @@ define("states/gameplay", ["require", "exports", "helpers/tiles", "entities/hams
             if (this.springText) {
                 this.springText.text = (this.levelLimits[this.currentLevelIndex].springs - this.springTilesNumber).toString();
             }
+            this.game.deathCounter = this.deathCounter;
         };
         return Gameplay;
     }(Phaser.State));
@@ -1211,13 +1240,16 @@ define("states/win", ["require", "exports", "entities/wobblingText", "entities/c
             this.background.anchor.set(0.5);
             this.background.scale.set(1.1);
             this.hamsterRain = new hamsterRain_1.HamsterRain(this.game);
-            this.title = new wobblingText_3.WobblingText(this.game, this.game.world.centerX, this.game.world.centerY - 80, 'You win!', this.getFontStyles('120px'));
+            this.title = new wobblingText_3.WobblingText(this.game, this.game.world.centerX, this.game.world.centerY - 150, 'You win!', this.getFontStyles('120px'));
             this.title.anchor.set(0.5);
-            this.score = new wobblingText_3.WobblingText(this.game, this.game.world.centerX, this.game.world.centerY, "Only " +  + " died in the process", this.getFontStyles('80px'));
+            this.score = new wobblingText_3.WobblingText(this.game, this.game.world.centerX, this.game.world.centerY, "Only " + this.game.deathCounter + " hamsters\ndied in the process!", this.getFontStyles('40px'));
             this.score.anchor.set(0.5);
-            this.clickToPlay = new wobblingText_3.WobblingText(this.game, this.game.world.centerX, this.game.world.centerY + 80, 'Click here to play again!', this.getFontStyles('60px'), 1000);
+            this.clickToPlay = new wobblingText_3.WobblingText(this.game, this.game.world.centerX, this.game.world.centerY + 150, 'Click here to play again!', this.getFontStyles('20px'), 1000);
             this.clickToPlay.anchor.set(0.5);
             this.cursor = new cursor_3.CursorEntity(this.game);
+        };
+        Win.prototype.destroy = function () {
+            this.game.deathCounter = 0;
         };
         Win.prototype.onTap = function () {
             this.game.state.start('Splash', true, false);
@@ -1227,7 +1259,8 @@ define("states/win", ["require", "exports", "entities/wobblingText", "entities/c
                 stroke: '#000',
                 strokeThickness: 12,
                 fill: '#fff',
-                font: fontSize + " Comic Sans MS, Impact"
+                font: fontSize + " Comic Sans MS, Impact",
+                align: 'center'
             };
         };
         Win.prototype.destroy = function () {
@@ -1271,25 +1304,4 @@ define("game", ["require", "exports", "states/boot", "states/preloader", "states
         var game = new Game();
     }
     exports.default = bootGame;
-});
-define("entities/groundBurst", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var BloodBurstEntity = /** @class */ (function (_super) {
-        __extends(BloodBurstEntity, _super);
-        function BloodBurstEntity(game, x, y) {
-            var _this = _super.call(this, game) || this;
-            _this.game.add.existing(_this);
-            _this.makeParticles('ground-cell');
-            _this.gravity = -600;
-            _this.setAlpha(0.3, 0.8);
-            _this.setScale(0.5, 1);
-            _this.x = x;
-            _this.y = y;
-            _this.start(true, 500, null, 30);
-            return _this;
-        }
-        return BloodBurstEntity;
-    }(Phaser.Particles.Arcade.Emitter));
-    exports.BloodBurstEntity = BloodBurstEntity;
 });

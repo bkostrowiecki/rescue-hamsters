@@ -12,6 +12,7 @@ import { DisapearingText } from '../entities/disapearingText';
 import { YouLooseWindow } from '../entities/youLooseWindow';
 import { DeletionTutorialWindow } from '../entities/deletionTutorialWindow';
 import { GoalTutorialWindow } from '../entities/goalTutorialWindow';
+import { GroundBurstEntity } from '../entities/groundBurst';
 
 export enum PlayerTileType {
     GROUND,
@@ -712,6 +713,13 @@ export class Gameplay extends Phaser.State {
             this.game.input.mousePointer.y
         );
 
+        if (thisTile) {
+            const groundBurst = new GroundBurstEntity(this.game, this.game.input.mousePointer.x, this.game.input.mousePointer.y);
+            this.game.time.events.add(3000, () => {
+                groundBurst.destroy();
+            });
+        }
+
         this.returnTileInType(thisTile);
 
         this.playerMap.putTileWorldXY(
@@ -913,5 +921,7 @@ export class Gameplay extends Phaser.State {
         if (this.springText) {
             this.springText.text = (this.levelLimits[this.currentLevelIndex].springs - this.springTilesNumber).toString();
         }
+
+        (this.game as any).deathCounter = this.deathCounter;
     }
 }

@@ -31,16 +31,21 @@ export class Win extends Phaser.State {
 
         this.hamsterRain = new HamsterRain(this.game);
 
-        this.title = new WobblingText(this.game, this.game.world.centerX, this.game.world.centerY - 80, 'You win!', this.getFontStyles('120px'));
+        this.title = new WobblingText(this.game, this.game.world.centerX, this.game.world.centerY - 150, 'You win!', this.getFontStyles('120px'));
         this.title.anchor.set(0.5);
 
-        this.score = new WobblingText(this.game, this.game.world.centerX, this.game.world.centerY, `Only ${} died in the process`, this.getFontStyles('80px'));
+        this.score = new WobblingText(this.game, this.game.world.centerX, this.game.world.centerY, `Only ${(this.game as any).deathCounter} hamsters
+died in the process!`, this.getFontStyles('40px'));
         this.score.anchor.set(0.5);
 
-        this.clickToPlay = new WobblingText(this.game, this.game.world.centerX, this.game.world.centerY + 80, 'Click here to play again!', this.getFontStyles('60px'), 1000);
+        this.clickToPlay = new WobblingText(this.game, this.game.world.centerX, this.game.world.centerY + 150, 'Click here to play again!', this.getFontStyles('20px'), 1000);
         this.clickToPlay.anchor.set(0.5);
 
         this.cursor = new CursorEntity(this.game);
+    }
+
+    destroy() {
+        (this.game as any).deathCounter = 0;
     }
 
     onTap() {
@@ -52,7 +57,8 @@ export class Win extends Phaser.State {
             stroke: '#000',
             strokeThickness: 12,
             fill: '#fff',
-            font: `${fontSize} Comic Sans MS, Impact`
+            font: `${fontSize} Comic Sans MS, Impact`,
+            align: 'center'
         }
     }
 

@@ -1,4 +1,4 @@
-export class BloodBurstEntity extends Phaser.Particles.Arcade.Emitter {
+export class GroundBurstEntity extends Phaser.Particles.Arcade.Emitter {
     constructor(game: Phaser.Game, x: number, y: number) {
         super(game);
 

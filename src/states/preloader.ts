@@ -28,6 +28,7 @@ export class Preloader extends Phaser.State {
         this.game.load.image('frame', 'bin/assets/frame.png');
 
         this.game.load.image('blood-cell', 'bin/assets/blood-cell.png');
+        this.game.load.image('ground-cell', 'bin/assets/ground-cell.png');
         this.game.load.image('magic-glow-particle', 'bin/assets/magic-glow-particle.png');
 
         this.game.load.image('next-level-window', 'bin/assets/next-level-window.png');
